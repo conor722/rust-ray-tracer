@@ -10,15 +10,43 @@ const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
 
 fn main() {
-    let sp = Sphere {
-        radius: 40.0,
-        centre: Vector3d {
-            x: 0.0,
-            y: 0.0,
-            z: 400.0,
+    let spheres = vec![
+        Sphere {
+            radius: 40.0,
+            centre: Vector3d {
+                x: 0.0,
+                y: 0.0,
+                z: 400.0,
+            },
+            color: Color { r: 0, g: 255, b: 0 },
         },
-        color: Color { r: 0, g: 255, b: 0 },
-    };
+        Sphere {
+            radius: 20.0,
+            centre: Vector3d {
+                x: 40.0,
+                y: 0.0,
+                z: 240.0,
+            },
+            color: Color {
+                r: 0,
+                g: 128,
+                b: 255,
+            },
+        },
+        Sphere {
+            radius: 30.0,
+            centre: Vector3d {
+                x: -60.0,
+                y: 20.0,
+                z: 240.0,
+            },
+            color: Color {
+                r: 255,
+                g: 128,
+                b: 255,
+            },
+        },
+    ];
 
     let lights = vec![
         Light::Ambient { intensity: 0.2 },
@@ -44,7 +72,7 @@ fn main() {
     let d = m as f64;
     println!("{:?}", d * 0.5);
 
-    let mut scene = Scene::new(WIDTH, HEIGHT, vec![sp], lights);
+    let mut scene = Scene::new(WIDTH, HEIGHT, spheres, lights);
 
     let c = Color { r: 255, b: 0, g: 0 };
     let n: u32 = c.into();
