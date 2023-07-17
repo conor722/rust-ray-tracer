@@ -8,6 +8,7 @@ pub enum Light {
     Directional { intensity: f64, direction: Vector3d },
 }
 
+#[derive(Clone, Copy)]
 pub struct Color {
     pub r: u8,
     pub g: u8,

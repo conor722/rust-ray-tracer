@@ -1,11 +1,15 @@
-use super::entities::Light;
+use super::entities::{Color, Light};
 use minifb::{Window, WindowOptions};
 use std::{
     f64::INFINITY,
     ops::{Add, Div, Mul, Sub},
 };
 
-type Color = u32;
+static WHITE: Color = Color {
+    r: 255,
+    g: 255,
+    b: 255,
+};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector3d {
@@ -174,7 +178,7 @@ impl Scene {
 
                 // println!("x={:?}, y={:?}, color={:?}", x, y, color);
 
-                self.canvas.put_pixel(x, y, color);
+                self.canvas.put_pixel(x, y, color.into());
             }
         }
     }
@@ -222,9 +226,9 @@ impl Scene {
 
             let intensity = self.compute_lighting_intensity(&P, &N);
 
-            return (sp.color as f64 * self.compute_lighting_intensity(&P, &N)) as Color;
+            return sp.color * self.compute_lighting_intensity(&P, &N);
         } else {
-            return 0xFFFFFF; // nothing, void
+            return WHITE.clone(); // nothing, void
         }
     }
 

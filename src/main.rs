@@ -17,7 +17,7 @@ fn main() {
             y: 0.0,
             z: 400.0,
         },
-        color: 0xFF00,
+        color: Color { r: 0, g: 255, b: 0 },
     };
 
     let lights = vec![
