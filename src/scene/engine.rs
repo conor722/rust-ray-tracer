@@ -228,7 +228,7 @@ impl Scene {
 
             return sp.color * self.compute_lighting_intensity(&P, &N);
         } else {
-            return WHITE.clone(); // nothing, void
+            return WHITE; // nothing, void
         }
     }
 
@@ -256,6 +256,7 @@ impl Scene {
         (t1, t2)
     }
 
+    /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(&self, P: &Vector3d, N: &Vector3d) -> f64 {
         let mut i: f64 = 0.0;
 

@@ -51,7 +51,7 @@ fn main() {
     let lights = vec![
         Light::Ambient { intensity: 0.2 },
         Light::Point {
-            intensity: 0.4,
+            intensity: 0.6,
             position: Vector3d {
                 x: 2.0,
                 y: 1.0,
@@ -68,16 +68,7 @@ fn main() {
         },
     ];
 
-    let m: u32 = 34534654;
-    let d = m as f64;
-    println!("{:?}", d * 0.5);
-
     let mut scene = Scene::new(WIDTH, HEIGHT, spheres, lights);
-
-    let c = Color { r: 255, b: 0, g: 0 };
-    let n: u32 = c.into();
-
-    println!("converted={:x}", n);
 
     // Limit to max ~60 fps update rate
     scene

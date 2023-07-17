@@ -8,7 +8,7 @@ pub enum Light {
     Directional { intensity: f64, direction: Vector3d },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -31,6 +31,6 @@ impl Mul<f64> for Color {
 
 impl Into<u32> for Color {
     fn into(self) -> u32 {
-        return self.b as u32 + ((self.g as u32) << 8) + ((self.r as u32) << 16) as u32;
+        return self.b as u32 + ((self.g as u32) << 8) + ((self.r as u32) << 16);
     }
 }
