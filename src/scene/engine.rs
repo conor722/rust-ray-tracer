@@ -1,7 +1,8 @@
+use super::entities::Light;
 use minifb::{Window, WindowOptions};
 use std::{
     f64::INFINITY,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
 };
 
 type Color = u32;
@@ -49,9 +50,25 @@ impl Mul<f64> for Vector3d {
     }
 }
 
+impl Div<f64> for Vector3d {
+    type Output = Self;
+
+    fn div(self, other: f64) -> Self {
+        Self {
+            x: self.x / other,
+            y: self.y / other,
+            z: self.z / other,
+        }
+    }
+}
+
 impl Vector3d {
     pub fn dot(&self, other: &Self) -> f64 {
         return (self.x * other.x) + (self.y * other.y) + (self.z * other.z);
+    }
+
+    pub fn length(&self) -> f64 {
+        return f64::sqrt(self.x.powi(2) + self.y.powi(2) + self.z.powi(2));
     }
 }
 
@@ -126,13 +143,14 @@ pub struct Sphere {
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
     spheres: Vec<Sphere>,
+    lights: Vec<Light>,
     origin: Vector3d,
     viewport: Viewport,
     pub canvas: Canvas,
 }
 
 impl Scene {
-    pub fn new(width: usize, height: usize, spheres: Vec<Sphere>) -> Scene {
+    pub fn new(width: usize, height: usize, spheres: Vec<Sphere>, lights: Vec<Light>) -> Scene {
         Scene {
             origin: Vector3d {
                 x: 0.0,
@@ -141,7 +159,8 @@ impl Scene {
             },
             viewport: Viewport::default(),
             canvas: Canvas::new(width, height),
-            spheres: spheres,
+            spheres,
+            lights,
         }
     }
 
@@ -197,7 +216,13 @@ impl Scene {
         }
 
         if let Some(sp) = closest_sphere {
-            return sp.color;
+            let P = O + D * closest_t;
+            let mut N = P - sp.centre;
+            N = N / N.length();
+
+            let intensity = self.compute_lighting_intensity(&P, &N);
+
+            return (sp.color as f64 * self.compute_lighting_intensity(&P, &N)) as Color;
         } else {
             return 0xFFFFFF; // nothing, void
         }
@@ -225,5 +250,40 @@ impl Scene {
         let t2 = (-b - discriminant.sqrt()) / (2.0 * a);
 
         (t1, t2)
+    }
+
+    fn compute_lighting_intensity(&self, P: &Vector3d, N: &Vector3d) -> f64 {
+        let mut i: f64 = 0.0;
+
+        for light in &self.lights {
+            match light {
+                Light::Ambient { intensity } => {
+                    i += *intensity;
+                }
+                Light::Directional {
+                    intensity,
+                    direction,
+                } => {
+                    let n_dot_l = N.dot(direction);
+
+                    if n_dot_l > 0.0 {
+                        i += intensity * n_dot_l / (N.length() * direction.length())
+                    }
+                }
+                Light::Point {
+                    intensity,
+                    position,
+                } => {
+                    let L = *position - *P;
+                    let n_dot_l = N.dot(&L);
+
+                    if n_dot_l > 0.0 {
+                        i += intensity * n_dot_l / (N.length() * L.length())
+                    }
+                }
+            }
+        }
+
+        return i;
     }
 }
