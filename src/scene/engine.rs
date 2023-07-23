@@ -2,7 +2,7 @@ use super::entities::{Color, Light, Sphere};
 use minifb::{Window, WindowOptions};
 use std::{
     f64::INFINITY,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
 };
 
 static WHITE: Color = Color {
@@ -50,6 +50,18 @@ impl Mul<f64> for Vector3d {
             x: self.x * other,
             y: self.y * other,
             z: self.z * other,
+        }
+    }
+}
+
+impl Neg for Vector3d {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
         }
     }
 }
@@ -218,7 +230,7 @@ impl Scene {
             let mut N = P - sp.centre;
             N = N / N.length();
 
-            return sp.color * self.compute_lighting_intensity(&P, &N);
+            return sp.color * self.compute_lighting_intensity(&P, &N, &-D, sp.specular);
         } else {
             return WHITE; // nothing, void
         }
@@ -249,7 +261,13 @@ impl Scene {
     }
 
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
-    fn compute_lighting_intensity(&self, P: &Vector3d, N: &Vector3d) -> f64 {
+    fn compute_lighting_intensity(
+        &self,
+        P: &Vector3d,
+        N: &Vector3d,
+        V: &Vector3d,
+        specular: f64,
+    ) -> f64 {
         let mut i: f64 = 0.0;
 
         for light in &self.lights {
@@ -263,9 +281,9 @@ impl Scene {
                 } => {
                     let n_dot_l = N.dot(direction);
 
-                    if n_dot_l > 0.0 {
-                        i += intensity * n_dot_l / (N.length() * direction.length())
-                    }
+                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, N, direction);
+                    i += self
+                        .compute_specular_lighting_intensity(specular, *intensity, N, V, direction);
                 }
                 Light::Point {
                     intensity,
@@ -274,13 +292,47 @@ impl Scene {
                     let L = *position - *P;
                     let n_dot_l = N.dot(&L);
 
-                    if n_dot_l > 0.0 {
-                        i += intensity * n_dot_l / (N.length() * L.length())
-                    }
+                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, N, &L);
+                    i += self.compute_specular_lighting_intensity(specular, *intensity, N, V, &L);
                 }
             }
         }
 
         return i;
+    }
+
+    fn compute_diffuse_lighting_intensity(
+        &self,
+        intensity: f64,
+        n_dot_l: f64,
+        N: &Vector3d,
+        L: &Vector3d,
+    ) -> f64 {
+        if n_dot_l <= 0.0 {
+            return 0.0;
+        }
+
+        intensity * n_dot_l / (N.length() * L.length())
+    }
+
+    fn compute_specular_lighting_intensity(
+        &self,
+        s: f64,
+        intensity: f64,
+        N: &Vector3d,
+        V: &Vector3d,
+
+        L: &Vector3d,
+    ) -> f64 {
+        if s != -1.0 {
+            let R = (*N * 2.0) * N.dot(&L) - *L;
+            let r_dot_v = R.dot(&V);
+
+            if r_dot_v > 0.0 {
+                return intensity * (r_dot_v / (R.length() * V.length())).powf(s);
+            }
+        }
+
+        0.0
     }
 }

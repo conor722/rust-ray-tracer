@@ -19,6 +19,7 @@ fn main() {
                 z: 400.0,
             },
             color: Color { r: 0, g: 255, b: 0 },
+            specular: 10.0,
         },
         Sphere {
             radius: 20.0,
@@ -32,6 +33,7 @@ fn main() {
                 g: 128,
                 b: 255,
             },
+            specular: 1000.0,
         },
         Sphere {
             radius: 30.0,
@@ -40,11 +42,8 @@ fn main() {
                 y: 20.0,
                 z: 240.0,
             },
-            color: Color {
-                r: 255,
-                g: 128,
-                b: 255,
-            },
+            color: Color { r: 255, g: 0, b: 0 },
+            specular: 2000.0,
         },
     ];
 
@@ -54,16 +53,16 @@ fn main() {
             intensity: 0.6,
             position: Vector3d {
                 x: 2.0,
-                y: 1.0,
+                y: 2.0,
                 z: 0.0,
             },
         },
         Light::Directional {
             intensity: 0.2,
             direction: Vector3d {
-                x: 1.0,
-                y: 4.0,
-                z: 4.0,
+                x: -5.0,
+                y: 0.0,
+                z: 2.0,
             },
         },
     ];

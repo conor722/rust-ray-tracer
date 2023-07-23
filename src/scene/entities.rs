@@ -39,4 +39,5 @@ pub struct Sphere {
     pub centre: Vector3d,
     pub radius: f64,
     pub color: Color,
+    pub specular: f64,
 }
