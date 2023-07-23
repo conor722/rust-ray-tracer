@@ -34,3 +34,9 @@ impl Into<u32> for Color {
         return self.b as u32 + ((self.g as u32) << 8) + ((self.r as u32) << 16);
     }
 }
+
+pub struct Sphere {
+    pub centre: Vector3d,
+    pub radius: f64,
+    pub color: Color,
+}

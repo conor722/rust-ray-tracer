@@ -1,4 +1,4 @@
-use super::entities::{Color, Light};
+use super::entities::{Color, Light, Sphere};
 use minifb::{Window, WindowOptions};
 use std::{
     f64::INFINITY,
@@ -137,12 +137,6 @@ impl Canvas {
     }
 }
 
-pub struct Sphere {
-    pub centre: Vector3d,
-    pub radius: f64,
-    pub color: Color,
-}
-
 /// The entrypoint class for the engine, encapsulates all entities and main classes needed to raycast a scene.
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
@@ -223,8 +217,6 @@ impl Scene {
             let P = O + D * closest_t;
             let mut N = P - sp.centre;
             N = N / N.length();
-
-            let intensity = self.compute_lighting_intensity(&P, &N);
 
             return sp.color * self.compute_lighting_intensity(&P, &N);
         } else {

@@ -1,8 +1,8 @@
 mod scene;
 
 use minifb::Key;
-use scene::engine::{Scene, Sphere, Vector3d};
-use scene::entities::Light;
+use scene::engine::{Scene, Vector3d};
+use scene::entities::{Light, Sphere};
 
 use crate::scene::entities::Color;
 
