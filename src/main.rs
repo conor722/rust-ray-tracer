@@ -51,19 +51,19 @@ fn main() {
 
     let triangles = vec![Triangle {
         v1: Vector3d {
-            x: -40.0,
+            x: -20.0,
             y: 0.0,
-            z: 20.0,
+            z: 120.0,
         },
         v2: Vector3d {
-            x: 40.0,
+            x: 20.0,
             y: 0.0,
-            z: 20.0,
+            z: 120.0,
         },
         v3: Vector3d {
             x: 0.0,
-            y: 40.0,
-            z: 20.0,
+            y: 20.0,
+            z: 120.0,
         },
         color: Color { r: 255, g: 0, b: 0 },
     }];

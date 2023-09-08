@@ -259,7 +259,7 @@ impl Scene {
         for triangle in self.triangles.iter() {
             let t = self.intersect_ray_with_triangle(O, D, triangle);
 
-            // println!("t1={:?}, t2={:?}", t1, t2);
+            println!("t={t}");
 
             if t < closest_t {
                 closest_t = t;
@@ -301,8 +301,11 @@ impl Scene {
         let EPSILON = 0.0000001;
 
         let edge1 = triangle.v2 - triangle.v1;
-        let edge2 = triangle.v2 - triangle.v1;
+        let edge2 = triangle.v3 - triangle.v1;
         let h = D.cross(&edge2);
+
+        println!("h={:?}", h);
+
         let a = edge1.dot(&h);
 
         if a > -EPSILON && a < EPSILON {
