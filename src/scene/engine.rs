@@ -260,6 +260,8 @@ impl Scene {
         (t1, t2)
     }
 
+    fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> (f64) {}
+
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(
         &self,
