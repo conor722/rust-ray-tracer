@@ -196,7 +196,7 @@ impl Scene {
         for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
             for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
                 let D = self.canvas_to_viewport(x as f64, y as f64);
-                let color = self.trace_ray_for_spheres(self.origin, D, 1.0, INFINITY);
+                let color = self.trace_ray_for_triangles(self.origin, D, 1.0, INFINITY);
 
                 // println!("x={:?}, y={:?}, color={:?}", x, y, color);
 
@@ -252,6 +252,27 @@ impl Scene {
         }
     }
 
+    fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
+        let mut closest_t = INFINITY;
+        let mut closest_triangle = Option::<&Triangle>::None;
+
+        for triangle in self.triangles.iter() {
+            let t = self.intersect_ray_with_triangle(O, D, triangle);
+
+            // println!("t1={:?}, t2={:?}", t1, t2);
+
+            if t < closest_t {
+                closest_t = t;
+                closest_triangle = Some(triangle);
+            }
+        }
+
+        if let Some(tri) = closest_triangle {
+            return tri.color;
+        } else {
+            return WHITE; // nothing, void
+        }
+    }
     fn intersect_ray_with_sphere(&self, O: Vector3d, D: Vector3d, sphere: &Sphere) -> (f64, f64) {
         let CO: Vector3d = O - sphere.centre;
 

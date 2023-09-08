@@ -1,8 +1,10 @@
 mod scene;
 
+use std::vec;
+
 use minifb::Key;
 use scene::engine::{Scene, Vector3d};
-use scene::entities::{Light, Sphere};
+use scene::entities::{Light, Sphere, Triangle};
 
 use crate::scene::entities::Color;
 
@@ -47,6 +49,25 @@ fn main() {
         },
     ];
 
+    let triangles = vec![Triangle {
+        v1: Vector3d {
+            x: -40.0,
+            y: 0.0,
+            z: 20.0,
+        },
+        v2: Vector3d {
+            x: 40.0,
+            y: 0.0,
+            z: 20.0,
+        },
+        v3: Vector3d {
+            x: 0.0,
+            y: 40.0,
+            z: 20.0,
+        },
+        color: Color { r: 255, g: 0, b: 0 },
+    }];
+
     let lights = vec![
         Light::Ambient { intensity: 0.2 },
         Light::Point {
@@ -67,7 +88,7 @@ fn main() {
         },
     ];
 
-    let mut scene = Scene::new(WIDTH, HEIGHT, spheres, lights);
+    let mut scene = Scene::new(WIDTH, HEIGHT, spheres, triangles, lights);
 
     // Limit to max ~60 fps update rate
     scene
