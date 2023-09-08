@@ -1,4 +1,4 @@
-use super::entities::{Color, Light, Sphere};
+use super::entities::{Color, Light, Sphere, Triangle};
 use minifb::{Window, WindowOptions};
 use std::{
     f64::INFINITY,
@@ -86,6 +86,14 @@ impl Vector3d {
     pub fn length(&self) -> f64 {
         return f64::sqrt(self.x.powi(2) + self.y.powi(2) + self.z.powi(2));
     }
+
+    pub fn cross(&self, other: &Self) -> Self {
+        Vector3d {
+            x: self.y * other.z - self.z * other.y,
+            y: -(self.x * other.z - self.z * other.x),
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
 }
 
 struct Viewport {
@@ -153,6 +161,7 @@ impl Canvas {
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
     spheres: Vec<Sphere>,
+    triangles: Vec<Triangle>,
     lights: Vec<Light>,
     origin: Vector3d,
     viewport: Viewport,
@@ -160,7 +169,13 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(width: usize, height: usize, spheres: Vec<Sphere>, lights: Vec<Light>) -> Scene {
+    pub fn new(
+        width: usize,
+        height: usize,
+        spheres: Vec<Sphere>,
+        triangles: Vec<Triangle>,
+        lights: Vec<Light>,
+    ) -> Scene {
         Scene {
             origin: Vector3d {
                 x: 0.0,
@@ -171,6 +186,7 @@ impl Scene {
             canvas: Canvas::new(width, height),
             spheres,
             lights,
+            triangles,
         }
     }
 
@@ -180,7 +196,7 @@ impl Scene {
         for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
             for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
                 let D = self.canvas_to_viewport(x as f64, y as f64);
-                let color = self.trace_ray(self.origin, D, 1.0, INFINITY);
+                let color = self.trace_ray_for_spheres(self.origin, D, 1.0, INFINITY);
 
                 // println!("x={:?}, y={:?}, color={:?}", x, y, color);
 
@@ -205,7 +221,7 @@ impl Scene {
         }
     }
 
-    fn trace_ray(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
+    fn trace_ray_for_spheres(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
         let mut closest_t = INFINITY;
         let mut closest_sphere = Option::<&Sphere>::None;
 
@@ -260,7 +276,42 @@ impl Scene {
         (t1, t2)
     }
 
-    fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> (f64) {}
+    fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> f64 {
+        let EPSILON = 0.0000001;
+
+        let edge1 = triangle.v2 - triangle.v1;
+        let edge2 = triangle.v2 - triangle.v1;
+        let h = D.cross(&edge2);
+        let a = edge1.dot(&h);
+
+        if a > -EPSILON && a < EPSILON {
+            return f64::INFINITY; // This ray is parallel to this triangle.
+        }
+
+        let f = 1.0 / a;
+        let s = O - triangle.v1;
+        let u = f * s.dot(&h);
+
+        if u < 0.0 || u > 1.0 {
+            return f64::INFINITY;
+        }
+
+        let q = s.cross(&edge1);
+        let v = f * D.dot(&q);
+
+        if v < 0.0 || u + v > 1.0 {
+            return f64::INFINITY;
+        }
+
+        // At this stage we can compute t to find out where the intersection point is on the line.
+        let t = f * edge2.dot(&q);
+
+        if t > EPSILON {
+            return t;
+        }
+
+        return f64::INFINITY;
+    }
 
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(
