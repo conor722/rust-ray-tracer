@@ -184,8 +184,8 @@ impl Scene {
     pub fn draw_scene(&mut self) {
         for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
             for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
-                let D = self.canvas_to_viewport(x as f64, y as f64);
-                let color = self.trace_ray_for_triangles(self.origin, D);
+                let direction = self.canvas_to_viewport(x as f64, y as f64);
+                let color = self.trace_ray_for_triangles(self.origin, direction);
 
                 self.canvas.put_pixel(x, y, color.into());
 
@@ -210,12 +210,12 @@ impl Scene {
         }
     }
 
-    fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d) -> Color {
+    fn trace_ray_for_triangles(&self, origin: Vector3d, direction: Vector3d) -> Color {
         let mut closest_t = f64::INFINITY;
         let mut closest_triangle = Option::<&Triangle>::None;
 
         for triangle in self.triangles.iter() {
-            let t = self.intersect_ray_with_triangle(O, D, triangle);
+            let t = self.intersect_ray_with_triangle(origin, direction, triangle);
 
             if t < closest_t {
                 closest_t = t;
@@ -224,13 +224,13 @@ impl Scene {
         }
 
         if let Some(tri) = closest_triangle {
-            let P = O + D * closest_t;
-            let A = tri.v2 - tri.v1;
-            let B = tri.v3 - tri.v1;
+            let p = origin + direction * closest_t;
+            let a = tri.v2 - tri.v1;
+            let b = tri.v3 - tri.v1;
 
-            let N = A.cross(&B);
+            let n = a.cross(&b);
 
-            return tri.color * self.compute_lighting_intensity(&P, &N, &-D, tri.specular);
+            return tri.color * self.compute_lighting_intensity(&p, &n, &-direction, tri.specular);
         } else {
             return WHITE; // nothing, void
         }
@@ -239,10 +239,15 @@ impl Scene {
     /// Use the Möller–Trumbore intersection algorithm to return the distance
     /// to the point where the ray vector D coming from the origin O intersects
     /// with the triangle (returns SINFINITY if it doesnt intersect at all)
-    fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> f64 {
+    fn intersect_ray_with_triangle(
+        &self,
+        origin: Vector3d,
+        direction: Vector3d,
+        triangle: &Triangle,
+    ) -> f64 {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
-        let h = D.cross(&edge2);
+        let h = direction.cross(&edge2);
 
         let a = edge1.dot(&h);
 
@@ -251,7 +256,7 @@ impl Scene {
         }
 
         let f = 1.0 / a;
-        let s = O - triangle.v1;
+        let s = origin - triangle.v1;
         let u = f * s.dot(&h);
 
         if u < 0.0 || u > 1.0 {
@@ -259,7 +264,7 @@ impl Scene {
         }
 
         let q = s.cross(&edge1);
-        let v = f * D.dot(&q);
+        let v = f * direction.dot(&q);
 
         if v < 0.0 || u + v > 1.0 {
             return f64::INFINITY;
@@ -278,9 +283,9 @@ impl Scene {
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(
         &self,
-        P: &Vector3d,
-        N: &Vector3d,
-        V: &Vector3d,
+        point: &Vector3d,
+        normal: &Vector3d,
+        v: &Vector3d,
         specular: f64,
     ) -> f64 {
         let mut i: f64 = 0.0;
@@ -294,21 +299,24 @@ impl Scene {
                     intensity,
                     direction,
                 } => {
-                    let n_dot_l = N.dot(direction);
+                    let n_dot_l = normal.dot(direction);
 
-                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, N, direction);
                     i += self
-                        .compute_specular_lighting_intensity(specular, *intensity, N, V, direction);
+                        .compute_diffuse_lighting_intensity(*intensity, n_dot_l, normal, direction);
+                    i += self.compute_specular_lighting_intensity(
+                        specular, *intensity, normal, v, direction,
+                    );
                 }
                 Light::Point {
                     intensity,
                     position,
                 } => {
-                    let L = *position - *P;
-                    let n_dot_l = N.dot(&L);
+                    let l = *position - *point;
+                    let n_dot_l = normal.dot(&l);
 
-                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, N, &L);
-                    i += self.compute_specular_lighting_intensity(specular, *intensity, N, V, &L);
+                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, normal, &l);
+                    i += self
+                        .compute_specular_lighting_intensity(specular, *intensity, normal, v, &l);
                 }
             }
         }
@@ -320,31 +328,30 @@ impl Scene {
         &self,
         intensity: f64,
         n_dot_l: f64,
-        N: &Vector3d,
-        L: &Vector3d,
+        normal: &Vector3d,
+        l: &Vector3d,
     ) -> f64 {
         if n_dot_l <= 0.0 {
             return 0.0;
         }
 
-        intensity * n_dot_l / (N.length() * L.length())
+        intensity * n_dot_l / (normal.length() * l.length())
     }
 
     fn compute_specular_lighting_intensity(
         &self,
         s: f64,
         intensity: f64,
-        N: &Vector3d,
-        V: &Vector3d,
-
-        L: &Vector3d,
+        normal: &Vector3d,
+        v: &Vector3d,
+        l: &Vector3d,
     ) -> f64 {
         if s != -1.0 {
-            let R = (*N * 2.0) * N.dot(&L) - *L;
-            let r_dot_v = R.dot(&V);
+            let r = (*normal * 2.0) * normal.dot(&l) - *l;
+            let r_dot_v = r.dot(&v);
 
             if r_dot_v > 0.0 {
-                return intensity * (r_dot_v / (R.length() * V.length())).powf(s);
+                return intensity * (r_dot_v / (r.length() * v.length())).powf(s);
             }
         }
 
