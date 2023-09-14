@@ -5,9 +5,7 @@ use std::{fs, vec};
 
 use minifb::Key;
 use scene::engine::{Scene, Vector3d};
-use scene::entities::{Light, Sphere, Triangle};
-
-use crate::scene::entities::Color;
+use scene::entities::Light;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
@@ -26,43 +24,6 @@ fn main() {
     let file = fs::read_to_string(file_name).expect("Could not read file");
 
     let triangles = file_management::utils::parse_lines(file.lines());
-
-    let spheres = vec![
-        Sphere {
-            radius: 40.0,
-            centre: Vector3d {
-                x: 0.0,
-                y: 0.0,
-                z: 400.0,
-            },
-            color: Color { r: 0, g: 255, b: 0 },
-            specular: 10.0,
-        },
-        Sphere {
-            radius: 20.0,
-            centre: Vector3d {
-                x: 40.0,
-                y: 0.0,
-                z: 240.0,
-            },
-            color: Color {
-                r: 0,
-                g: 128,
-                b: 255,
-            },
-            specular: 1000.0,
-        },
-        Sphere {
-            radius: 30.0,
-            centre: Vector3d {
-                x: -60.0,
-                y: 20.0,
-                z: 240.0,
-            },
-            color: Color { r: 255, g: 0, b: 0 },
-            specular: 2000.0,
-        },
-    ];
 
     let lights = vec![
         Light::Ambient { intensity: 0.2 },
@@ -84,7 +45,7 @@ fn main() {
         },
     ];
 
-    let mut scene = Scene::new(WIDTH, HEIGHT, spheres, triangles, lights);
+    let mut scene = Scene::new(WIDTH, HEIGHT, triangles, lights);
 
     // Limit to max ~60 fps update rate
     scene

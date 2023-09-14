@@ -35,13 +35,6 @@ impl Into<u32> for Color {
     }
 }
 
-pub struct Sphere {
-    pub centre: Vector3d,
-    pub radius: f64,
-    pub color: Color,
-    pub specular: f64,
-}
-
 #[derive(PartialEq, Debug)]
 pub struct Triangle {
     pub v1: Vector3d,

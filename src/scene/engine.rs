@@ -1,4 +1,4 @@
-use super::entities::{Color, Light, Sphere, Triangle};
+use super::entities::{Color, Light, Triangle};
 use minifb::{Window, WindowOptions};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -157,7 +157,6 @@ impl Canvas {
 /// The entrypoint class for the engine, encapsulates all entities and main classes needed to raycast a scene.
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
-    spheres: Vec<Sphere>,
     triangles: Vec<Triangle>,
     lights: Vec<Light>,
     origin: Vector3d,
@@ -166,13 +165,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(
-        width: usize,
-        height: usize,
-        spheres: Vec<Sphere>,
-        triangles: Vec<Triangle>,
-        lights: Vec<Light>,
-    ) -> Scene {
+    pub fn new(width: usize, height: usize, triangles: Vec<Triangle>, lights: Vec<Light>) -> Scene {
         Scene {
             origin: Vector3d {
                 x: 0.0,
@@ -181,7 +174,6 @@ impl Scene {
             },
             viewport: Viewport::default(),
             canvas: Canvas::new(width, height),
-            spheres,
             lights,
             triangles,
         }
@@ -218,35 +210,6 @@ impl Scene {
         }
     }
 
-    fn trace_ray_for_spheres(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
-        let mut closest_t = f64::INFINITY;
-        let mut closest_sphere = Option::<&Sphere>::None;
-
-        for sphere in self.spheres.iter() {
-            let (t1, t2) = self.intersect_ray_with_sphere(O, D, sphere);
-
-            if (t_min < t1) && (t1 < t_max) && (t1 < closest_t) {
-                closest_t = t1;
-                closest_sphere = Some(sphere);
-            }
-
-            if (t_min < t2) && (t2 < t_max) && (t2 < closest_t) {
-                closest_t = t2;
-                closest_sphere = Some(sphere);
-            }
-        }
-
-        if let Some(sp) = closest_sphere {
-            let P = O + D * closest_t;
-            let mut N = P - sp.centre;
-            N = N / N.length();
-
-            return sp.color * self.compute_lighting_intensity(&P, &N, &-D, sp.specular);
-        } else {
-            return WHITE; // nothing, void
-        }
-    }
-
     fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d) -> Color {
         let mut closest_t = f64::INFINITY;
         let mut closest_triangle = Option::<&Triangle>::None;
@@ -272,25 +235,10 @@ impl Scene {
             return WHITE; // nothing, void
         }
     }
-    fn intersect_ray_with_sphere(&self, O: Vector3d, D: Vector3d, sphere: &Sphere) -> (f64, f64) {
-        let CO: Vector3d = O - sphere.centre;
 
-        let a = D.dot(&D);
-        let b = 2.0 * CO.dot(&D);
-        let c = CO.dot(&CO) - sphere.radius * sphere.radius;
-
-        let discriminant = b * b - 4.0 * a * c;
-
-        if discriminant < 0.0 {
-            return (f64::INFINITY, f64::INFINITY);
-        }
-
-        let t1 = (-b + discriminant.sqrt()) / (2.0 * a);
-        let t2 = (-b - discriminant.sqrt()) / (2.0 * a);
-
-        (t1, t2)
-    }
-
+    /// Use the Möller–Trumbore intersection algorithm to return the distance
+    /// to the point where the ray vector D coming from the origin O intersects
+    /// with the triangle (returns SINFINITY if it doesnt intersect at all)
     fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> f64 {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
