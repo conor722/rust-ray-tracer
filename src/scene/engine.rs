@@ -1,9 +1,6 @@
 use super::entities::{Color, Light, Sphere, Triangle};
 use minifb::{Window, WindowOptions};
-use std::{
-    f64::INFINITY,
-    ops::{Add, Div, Mul, Neg, Sub},
-};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 static WHITE: Color = Color {
     r: 255,
@@ -222,7 +219,7 @@ impl Scene {
     }
 
     fn trace_ray_for_spheres(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
-        let mut closest_t = INFINITY;
+        let mut closest_t = f64::INFINITY;
         let mut closest_sphere = Option::<&Sphere>::None;
 
         for sphere in self.spheres.iter() {
@@ -253,7 +250,7 @@ impl Scene {
     }
 
     fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d) -> Color {
-        let mut closest_t = INFINITY;
+        let mut closest_t = f64::INFINITY;
         let mut closest_triangle = Option::<&Triangle>::None;
 
         for triangle in self.triangles.iter() {
@@ -304,15 +301,13 @@ impl Scene {
     }
 
     fn intersect_ray_with_triangle(&self, O: Vector3d, D: Vector3d, triangle: &Triangle) -> f64 {
-        let EPSILON = 0.0000001;
-
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
         let h = D.cross(&edge2);
 
         let a = edge1.dot(&h);
 
-        if a > -EPSILON && a < EPSILON {
+        if a > -f64::EPSILON && a < f64::EPSILON {
             return f64::INFINITY; // This ray is parallel to this triangle.
         }
 
@@ -334,7 +329,7 @@ impl Scene {
         // At this stage we can compute t to find out where the intersection point is on the line.
         let t = f * edge2.dot(&q);
 
-        if t > EPSILON {
+        if t > f64::EPSILON {
             return t;
         }
 
