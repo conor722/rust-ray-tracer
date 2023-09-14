@@ -1,3 +1,4 @@
+mod file_management;
 mod scene;
 
 use std::vec;
@@ -49,24 +50,46 @@ fn main() {
         },
     ];
 
-    let triangles = vec![Triangle {
-        v1: Vector3d {
-            x: -20.0,
-            y: 0.0,
-            z: 120.0,
+    let triangles = vec![
+        Triangle {
+            v1: Vector3d {
+                x: -20.0,
+                y: 0.0,
+                z: 120.0,
+            },
+            v2: Vector3d {
+                x: 20.0,
+                y: 0.0,
+                z: 120.0,
+            },
+            v3: Vector3d {
+                x: 0.0,
+                y: 20.0,
+                z: 120.0,
+            },
+            color: Color { r: 255, g: 0, b: 0 },
+            specular: 240.0,
         },
-        v2: Vector3d {
-            x: 20.0,
-            y: 0.0,
-            z: 120.0,
+        Triangle {
+            v1: Vector3d {
+                x: 20.0,
+                y: 0.0,
+                z: 120.0,
+            },
+            v2: Vector3d {
+                x: 50.0,
+                y: 0.0,
+                z: 140.0,
+            },
+            v3: Vector3d {
+                x: 20.0,
+                y: 20.0,
+                z: 150.0,
+            },
+            color: Color { r: 0, g: 255, b: 0 },
+            specular: 240.0,
         },
-        v3: Vector3d {
-            x: 0.0,
-            y: 20.0,
-            z: 120.0,
-        },
-        color: Color { r: 255, g: 0, b: 0 },
-    }];
+    ];
 
     let lights = vec![
         Light::Ambient { intensity: 0.2 },

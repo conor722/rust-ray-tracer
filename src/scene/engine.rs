@@ -11,7 +11,7 @@ static WHITE: Color = Color {
     b: 255,
 };
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3d {
     pub x: f64,
     pub y: f64,
@@ -196,7 +196,7 @@ impl Scene {
         for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
             for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
                 let D = self.canvas_to_viewport(x as f64, y as f64);
-                let color = self.trace_ray_for_triangles(self.origin, D, 1.0, INFINITY);
+                let color = self.trace_ray_for_triangles(self.origin, D);
 
                 // println!("x={:?}, y={:?}, color={:?}", x, y, color);
 
@@ -252,7 +252,7 @@ impl Scene {
         }
     }
 
-    fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d, t_min: f64, t_max: f64) -> Color {
+    fn trace_ray_for_triangles(&self, O: Vector3d, D: Vector3d) -> Color {
         let mut closest_t = INFINITY;
         let mut closest_triangle = Option::<&Triangle>::None;
 
@@ -268,7 +268,13 @@ impl Scene {
         }
 
         if let Some(tri) = closest_triangle {
-            return tri.color;
+            let P = O + D * closest_t;
+            let A = tri.v2 - tri.v1;
+            let B = tri.v3 - tri.v1;
+
+            let N = A.cross(&B);
+
+            return tri.color * self.compute_lighting_intensity(&P, &N, &-D, tri.specular);
         } else {
             return WHITE; // nothing, void
         }
@@ -303,8 +309,6 @@ impl Scene {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
         let h = D.cross(&edge2);
-
-        println!("h={:?}", h);
 
         let a = edge1.dot(&h);
 

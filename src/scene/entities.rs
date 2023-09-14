@@ -8,7 +8,7 @@ pub enum Light {
     Directional { intensity: f64, direction: Vector3d },
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -42,9 +42,11 @@ pub struct Sphere {
     pub specular: f64,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Triangle {
     pub v1: Vector3d,
     pub v2: Vector3d,
     pub v3: Vector3d,
     pub color: Color,
+    pub specular: f64,
 }
