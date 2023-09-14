@@ -1,7 +1,7 @@
 mod file_management;
 mod scene;
 
-use std::vec;
+use std::{fs, vec};
 
 use minifb::Key;
 use scene::engine::{Scene, Vector3d};
@@ -13,6 +13,20 @@ const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
 
 fn main() {
+    let mut args = std::env::args();
+
+    args.next();
+
+    let file_name = args
+        .next()
+        .expect("First argument needs to be the name of a file with vertex and triangle data");
+
+    println!("using model file: {file_name}");
+
+    let file = fs::read_to_string(file_name).expect("Could not read file");
+
+    let triangles = file_management::utils::parse_lines(file.lines());
+
     let spheres = vec![
         Sphere {
             radius: 40.0,
@@ -47,47 +61,6 @@ fn main() {
             },
             color: Color { r: 255, g: 0, b: 0 },
             specular: 2000.0,
-        },
-    ];
-
-    let triangles = vec![
-        Triangle {
-            v1: Vector3d {
-                x: -20.0,
-                y: 0.0,
-                z: 120.0,
-            },
-            v2: Vector3d {
-                x: 20.0,
-                y: 0.0,
-                z: 120.0,
-            },
-            v3: Vector3d {
-                x: 0.0,
-                y: 20.0,
-                z: 120.0,
-            },
-            color: Color { r: 255, g: 0, b: 0 },
-            specular: 240.0,
-        },
-        Triangle {
-            v1: Vector3d {
-                x: 20.0,
-                y: 0.0,
-                z: 120.0,
-            },
-            v2: Vector3d {
-                x: 50.0,
-                y: 0.0,
-                z: 140.0,
-            },
-            v3: Vector3d {
-                x: 20.0,
-                y: 20.0,
-                z: 150.0,
-            },
-            color: Color { r: 0, g: 255, b: 0 },
-            specular: 240.0,
         },
     ];
 
