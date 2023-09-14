@@ -196,6 +196,8 @@ impl Scene {
                 let color = self.trace_ray_for_triangles(self.origin, D);
 
                 self.canvas.put_pixel(x, y, color.into());
+
+                println!("finished drawing ray at {x}, {y}");
             }
         }
     }
