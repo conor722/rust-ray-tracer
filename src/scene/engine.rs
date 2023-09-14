@@ -195,8 +195,6 @@ impl Scene {
                 let D = self.canvas_to_viewport(x as f64, y as f64);
                 let color = self.trace_ray_for_triangles(self.origin, D);
 
-                // println!("x={:?}, y={:?}, color={:?}", x, y, color);
-
                 self.canvas.put_pixel(x, y, color.into());
             }
         }
@@ -224,8 +222,6 @@ impl Scene {
 
         for sphere in self.spheres.iter() {
             let (t1, t2) = self.intersect_ray_with_sphere(O, D, sphere);
-
-            // println!("t1={:?}, t2={:?}", t1, t2);
 
             if (t_min < t1) && (t1 < t_max) && (t1 < closest_t) {
                 closest_t = t1;
@@ -256,8 +252,6 @@ impl Scene {
         for triangle in self.triangles.iter() {
             let t = self.intersect_ray_with_triangle(O, D, triangle);
 
-            println!("t={t}");
-
             if t < closest_t {
                 closest_t = t;
                 closest_triangle = Some(triangle);
@@ -284,11 +278,6 @@ impl Scene {
         let c = CO.dot(&CO) - sphere.radius * sphere.radius;
 
         let discriminant = b * b - 4.0 * a * c;
-
-        /* println!(
-            "CO={:?}, D = {:?}, a = {:?}, b = {:?}, c={:?}, discriminant={:?}",
-            CO, D, a, b, c, discriminant
-        ); */
 
         if discriminant < 0.0 {
             return (f64::INFINITY, f64::INFINITY);
