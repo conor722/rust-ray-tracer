@@ -23,7 +23,7 @@ pub fn parse_lines(lines: Lines) -> Vec<Triangle> {
                 let tri = get_triangle(&mut split_line, &vertices);
                 triangles.push(tri);
             }
-            _ => panic!("Unknown line type"),
+            _ => panic!("unknown line type"),
         }
     }
 
@@ -37,7 +37,7 @@ where
     line.next()
         .expect("premature end of line")
         .parse()
-        .expect("cannot parse to float")
+        .expect("cannot parse value to desired type")
 }
 
 fn get_vertex(mut line: &mut Split<'_, &str>) -> Vector3d {
