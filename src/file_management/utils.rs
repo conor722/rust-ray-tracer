@@ -4,11 +4,18 @@ use std::str::{FromStr, Lines, Split};
 use crate::scene::engine::Vector3d;
 use crate::scene::entities::{Color, Triangle};
 
+pub struct SceneData {
+    pub triangles: Vec<Triangle>,
+    pub vertices: Vec<Vector3d>,
+    pub vertex_texture_coords: Vec<Vector3d>,
+}
+
 static MISSING_VERTEX_ERROR_MESSAGE: &str = "No vertex with this index";
 
-pub fn parse_lines(lines: Lines) -> Vec<Triangle> {
+pub fn parse_lines(lines: Lines) -> SceneData {
     let mut vertices = Vec::new();
     let mut triangles = Vec::new();
+    let mut vertex_texture_coords = Vec::new();
 
     for line in lines {
         let mut split_line = line.split(" ");
@@ -23,11 +30,19 @@ pub fn parse_lines(lines: Lines) -> Vec<Triangle> {
                 let tri = get_triangle(&mut split_line, &vertices);
                 triangles.push(tri);
             }
+            Some("vertex_texture_coord") => {
+                let vt = get_vertex(&mut split_line);
+                vertex_texture_coords.push(vt);
+            }
             _ => panic!("unknown line type"),
         }
     }
 
-    triangles
+    SceneData {
+        vertices,
+        triangles,
+        vertex_texture_coords,
+    }
 }
 
 fn parse_next_value_from_split<T: FromStr>(line: &mut Split<'_, &str>) -> T
@@ -135,6 +150,6 @@ mod test {
 
         let result = parse_lines(lines.lines());
 
-        assert_eq!(result, triangles);
+        assert_eq!(result.triangles, triangles);
     }
 }

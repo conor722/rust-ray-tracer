@@ -1,3 +1,5 @@
+use crate::file_management::utils::SceneData;
+
 use super::entities::{Color, Light, Triangle};
 use minifb::{Window, WindowOptions};
 use std::ops::{Add, Div, Mul, Neg, Sub};
@@ -93,6 +95,19 @@ impl Vector3d {
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct IntersectionResult {
+    t: f64,
+    u: f64,
+    v: f64,
+}
+
+static NO_INTERSECTION: IntersectionResult = IntersectionResult {
+    t: f64::INFINITY,
+    u: 0.0,
+    v: 0.0,
+};
+
 struct Viewport {
     width: f64,
     height: f64,
@@ -157,7 +172,7 @@ impl Canvas {
 /// The entrypoint class for the engine, encapsulates all entities and main classes needed to raycast a scene.
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
-    triangles: Vec<Triangle>,
+    scene_data: SceneData,
     lights: Vec<Light>,
     origin: Vector3d,
     viewport: Viewport,
@@ -165,7 +180,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(width: usize, height: usize, triangles: Vec<Triangle>, lights: Vec<Light>) -> Scene {
+    pub fn new(width: usize, height: usize, scene_data: SceneData, lights: Vec<Light>) -> Scene {
         Scene {
             origin: Vector3d {
                 x: 0.0,
@@ -175,7 +190,7 @@ impl Scene {
             viewport: Viewport::default(),
             canvas: Canvas::new(width, height),
             lights,
-            triangles,
+            scene_data,
         }
     }
 
@@ -214,8 +229,9 @@ impl Scene {
         let mut closest_t = f64::INFINITY;
         let mut closest_triangle = Option::<&Triangle>::None;
 
-        for triangle in self.triangles.iter() {
-            let t = self.intersect_ray_with_triangle(origin, direction, triangle);
+        for triangle in self.scene_data.triangles.iter() {
+            let IntersectionResult { t, u, v } =
+                self.intersect_ray_with_triangle(origin, direction, triangle);
 
             if t < closest_t {
                 closest_t = t;
@@ -244,7 +260,7 @@ impl Scene {
         origin: Vector3d,
         direction: Vector3d,
         triangle: &Triangle,
-    ) -> f64 {
+    ) -> IntersectionResult {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
         let h = direction.cross(&edge2);
@@ -252,7 +268,8 @@ impl Scene {
         let a = edge1.dot(&h);
 
         if a > -f64::EPSILON && a < f64::EPSILON {
-            return f64::INFINITY; // This ray is parallel to this triangle.
+            // This ray is parallel to this triangle.
+            return NO_INTERSECTION;
         }
 
         let f = 1.0 / a;
@@ -260,24 +277,28 @@ impl Scene {
         let u = f * s.dot(&h);
 
         if u < 0.0 || u > 1.0 {
-            return f64::INFINITY;
+            return IntersectionResult {
+                t: f64::INFINITY,
+                u: 0.0,
+                v: 0.0,
+            };
         }
 
         let q = s.cross(&edge1);
         let v = f * direction.dot(&q);
 
         if v < 0.0 || u + v > 1.0 {
-            return f64::INFINITY;
+            return NO_INTERSECTION;
         }
 
         // At this stage we can compute t to find out where the intersection point is on the line.
         let t = f * edge2.dot(&q);
 
         if t > f64::EPSILON {
-            return t;
+            return IntersectionResult { t, u, v };
         }
 
-        return f64::INFINITY;
+        return NO_INTERSECTION;
     }
 
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
