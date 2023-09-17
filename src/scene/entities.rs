@@ -40,6 +40,9 @@ pub struct Triangle {
     pub v1: Vector3d,
     pub v2: Vector3d,
     pub v3: Vector3d,
+    pub v1_tex_coords: Vector3d,
+    pub v2_tex_coords: Vector3d,
+    pub v3_tex_coords: Vector3d,
     pub color: Color,
     pub specular: f64,
 }
