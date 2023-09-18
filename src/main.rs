@@ -26,9 +26,9 @@ fn main() {
     let triangles = file_management::utils::parse_lines(file.lines());
 
     let lights = vec![
-        Light::Ambient { intensity: 0.2 },
+        Light::Ambient { intensity: 0.4 },
         Light::Point {
-            intensity: 0.6,
+            intensity: 0.7,
             position: Vector3d {
                 x: 2.0,
                 y: 2.0,
@@ -36,7 +36,7 @@ fn main() {
             },
         },
         Light::Directional {
-            intensity: 0.2,
+            intensity: 0.5,
             direction: Vector3d {
                 x: -5.0,
                 y: 0.0,

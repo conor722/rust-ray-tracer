@@ -1,6 +1,6 @@
 use crate::file_management::utils::SceneData;
 
-use super::entities::{Color, Light, Texture, Triangle};
+use super::entities::{Color, Light, Triangle};
 use minifb::{Window, WindowOptions};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -253,10 +253,15 @@ impl Scene {
                 + intersection.triangle.v2_tex_coords.y * intersection.v
                 + intersection.triangle.v3_tex_coords.y * w;
 
-            let tex_x_index = ((tex_x as usize * tex.width) as usize) % tex.width;
-            let tex_y_index = ((tex_y as usize * tex.height) as usize) % tex.height;
+            let tex_x_index = ((tex_x * tex.width as f64) as usize) % tex.width;
+            let tex_y_index = ((tex_y * tex.height as f64) as usize) % tex.height;
 
             let col = tex.colours[tex.width * tex_y_index + tex_x_index];
+
+            println!(
+                "found col={:?}, tex_x_index={}, tex_y_index={}, tex_width={}, tex_height={}, tex_x={}, tex_y={}",
+                col, tex_x_index, tex_y_index, tex.width, tex.height, tex_x, tex_y
+            );
 
             return col
                 * self.compute_lighting_intensity(

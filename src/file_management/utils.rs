@@ -1,8 +1,10 @@
 use std::fmt::Debug;
-use std::str::{FromStr, Lines, Split, SplitWhitespace};
+use std::str::{FromStr, Lines, SplitWhitespace};
 
 use crate::scene::engine::Vector3d;
 use crate::scene::entities::{Color, Texture, Triangle};
+
+use image::io::Reader as ImageReader;
 
 #[derive(Debug, PartialEq)]
 pub struct SceneData {
@@ -46,8 +48,6 @@ pub fn parse_lines(lines: Lines) -> SceneData {
         let mut split_line = line.split_whitespace();
         let line_type = split_line.next();
 
-        println!("{line}");
-
         match line_type {
             Some("v") => {
                 let v = get_vertex(&mut split_line);
@@ -58,8 +58,36 @@ pub fn parse_lines(lines: Lines) -> SceneData {
                 scene_data.triangles.push(tri);
             }
             Some("vt") => {
-                // let vt = get_vertex(&mut split_line);
-                // scene_data.vertex_texture_coords.push(vt);
+                let vt = get_vertex(&mut split_line);
+                scene_data.vertex_texture_coords.push(vt);
+            }
+            Some("t") => {
+                let file_name: String =
+                    parse_next_value_from_split(&mut split_line).expect("Invalid texture name");
+                let img = ImageReader::open(file_name)
+                    .expect("Cannot read texture file")
+                    .decode()
+                    .expect("Cannot decode texture file");
+
+                let mut cols = vec![];
+
+                for chunk in img.as_bytes().chunks(3) {
+                    let new_col = Color {
+                        r: chunk[0],
+                        g: chunk[1],
+                        b: chunk[2],
+                    };
+
+                    cols.push(new_col)
+                }
+
+                let tex = Texture {
+                    width: img.width() as usize,
+                    height: img.height() as usize,
+                    colours: cols,
+                };
+
+                scene_data.textures.push(tex);
             }
             Some(&_) => {}
             None => {}
@@ -70,7 +98,7 @@ pub fn parse_lines(lines: Lines) -> SceneData {
 }
 
 fn parse_next_value_from_split<'a, T: FromStr>(
-    mut line: &mut impl Iterator<Item = &'a str>,
+    line: &mut impl Iterator<Item = &'a str>,
 ) -> Option<T>
 where
     <T as FromStr>::Err: Debug,
@@ -164,7 +192,7 @@ fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -
         v3_tex_coords: *v3_tex_coords,
         color: Color { r: 0, g: 255, b: 0 },
         specular,
-        texture_index: 0,
+        texture_index: scene_data.textures.len() - 1,
     }
 }
 
