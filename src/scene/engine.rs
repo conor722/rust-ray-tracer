@@ -145,7 +145,9 @@ impl Canvas {
     /// i.e (0,0) is the pixel in the centre of the screen.
     pub fn put_pixel(&mut self, x: i32, y: i32, color: u32) {
         let new_x = x + (self.width as i32) / 2;
-        let new_y = y + (self.height as i32) / 2;
+
+        // Minus from self.height as y=0 is the top of the screen, if we don't the image will be upside down.
+        let new_y = self.height as i32 - (y + (self.height as i32) / 2);
 
         if new_x < 0 || new_x >= self.width as i32 || new_y < 0 || new_y >= self.height as i32 {
             // Coordinates are out of bounds (will crash if we try to use these as buffer coords)
