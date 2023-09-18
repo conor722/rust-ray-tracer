@@ -125,7 +125,7 @@ fn get_vertex(mut line: &mut SplitWhitespace<'_>) -> Vector3d {
     return Vector3d { x, y, z };
 }
 
-fn get_vertex_attributes<'a>(line: &str) -> (usize, Option<usize>) {
+fn get_vertex_attributes<'a>(line: &str) -> (usize, Option<usize>, Option<usize>) {
     let mut line_split = line.split("/");
 
     let vertex_attribute_collection: String =
@@ -137,7 +137,9 @@ fn get_vertex_attributes<'a>(line: &str) -> (usize, Option<usize>) {
 
     let tex_coord_index = parse_next_value_from_split::<usize>(&mut line_split);
 
-    return (index, tex_coord_index);
+    let normal_coord_index = parse_next_value_from_split::<usize>(&mut line_split);
+
+    return (index, tex_coord_index, normal_coord_index);
 }
 
 fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -> Triangle {
@@ -148,9 +150,12 @@ fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -
     let v3_attribute_string: String =
         parse_next_value_from_split(line).expect("No data for vertex 3");
 
-    let (v1_index, v1_tex_coord_index) = get_vertex_attributes(&v1_attribute_string);
-    let (v2_index, v2_tex_coord_index) = get_vertex_attributes(&v2_attribute_string);
-    let (v3_index, v3_tex_coord_index) = get_vertex_attributes(&v3_attribute_string);
+    let (v1_index, v1_tex_coord_index, v1_normal_coord_index) =
+        get_vertex_attributes(&v1_attribute_string);
+    let (v2_index, v2_tex_coord_index, v2_normal_coord_index) =
+        get_vertex_attributes(&v2_attribute_string);
+    let (v3_index, v3_tex_coord_index, v3_normal_coord_index) =
+        get_vertex_attributes(&v3_attribute_string);
 
     let specular: f64 = 240.0;
 
@@ -174,19 +179,42 @@ fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -
     if let Some(v1_tc_index) = v1_tex_coord_index {
         v1_tex_coords = scene_data
             .vertex_texture_coords
-            .get(v1_tc_index)
+            .get(v1_tc_index - 1)
             .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
     }
     if let Some(v2_tc_index) = v2_tex_coord_index {
         v2_tex_coords = scene_data
             .vertex_texture_coords
-            .get(v2_tc_index)
+            .get(v2_tc_index - 1)
             .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
     }
     if let Some(v3_tc_index) = v3_tex_coord_index {
         v3_tex_coords = scene_data
             .vertex_texture_coords
-            .get(v3_tc_index)
+            .get(v3_tc_index - 1)
+            .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
+    }
+
+    let mut v1_normal_coords = DEFAULT_VERTEX_TEXTURE_COORDS;
+    let mut v2_normal_coords = DEFAULT_VERTEX_TEXTURE_COORDS;
+    let mut v3_normal_coords = DEFAULT_VERTEX_TEXTURE_COORDS;
+
+    if let Some(v1_normal_index) = v1_normal_coord_index {
+        v1_normal_coords = scene_data
+            .vertex_normal_coords
+            .get(v1_normal_index - 1)
+            .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
+    }
+    if let Some(v2_normal_index) = v2_normal_coord_index {
+        v2_normal_coords = scene_data
+            .vertex_normal_coords
+            .get(v2_normal_index - 1)
+            .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
+    }
+    if let Some(v3_normal_index) = v3_normal_coord_index {
+        v3_normal_coords = scene_data
+            .vertex_normal_coords
+            .get(v3_normal_index - 1)
             .unwrap_or_else(|| DEFAULT_VERTEX_TEXTURE_COORDS);
     }
 
@@ -197,6 +225,9 @@ fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -
         v1_tex_coords: *v1_tex_coords,
         v2_tex_coords: *v2_tex_coords,
         v3_tex_coords: *v3_tex_coords,
+        v1_normal_coords: *v1_normal_coords,
+        v2_normal_coords: *v2_normal_coords,
+        v3_normal_coords: *v3_normal_coords,
         color: Color { r: 0, g: 255, b: 0 },
         specular,
         texture_index: scene_data.textures.len() - 1,
