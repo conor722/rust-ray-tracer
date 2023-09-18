@@ -24,7 +24,9 @@ Vertex normals like:
 
 And then we can define triangles by linking together 3 groups of a vertex, a vertex texture coordinate, and a vertex normal like so:
 
-`f <v1_index>/<vn1_index>/<vt1_index> <v2_index>/<vn2_index>/<vt2_index> <v3_index>/<vn3_index>/<vt3_index>`
+`f <v1_index>/<vt1_index>/<vn1_index> <v2_index>/<vt2_index>/<vn2_index> <v3_index>/<vt3_index>/<vn3_index>`
+
+The indices are 1-based with respect to the order they appeared in the model file.
 
 To use a texture, we can use:
 
