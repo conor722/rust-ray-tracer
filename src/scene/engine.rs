@@ -239,10 +239,6 @@ impl Scene {
 
         if let Some(intersection) = closest_intersection_result {
             let p = origin + direction * closest_t;
-            let a = intersection.triangle.v2 - intersection.triangle.v1;
-            let b = intersection.triangle.v3 - intersection.triangle.v1;
-
-            let n = a.cross(&b);
 
             let tex = &self.scene_data.textures[intersection.triangle.texture_index];
 
@@ -264,6 +260,10 @@ impl Scene {
                 "found col={:?}, tex_x_index={}, tex_y_index={}, tex_width={}, tex_height={}, tex_x={}, tex_y={}",
                 col, tex_x_index, tex_y_index, tex.width, tex.height, tex_x, tex_y
             );
+
+            let n = intersection.triangle.v2_normal_coords * intersection.u
+                + intersection.triangle.v3_normal_coords * intersection.v
+                + intersection.triangle.v1_normal_coords * w;
 
             return col
                 * self.compute_lighting_intensity(
