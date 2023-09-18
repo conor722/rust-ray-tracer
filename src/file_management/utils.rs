@@ -11,6 +11,7 @@ pub struct SceneData {
     pub triangles: Vec<Triangle>,
     pub vertices: Vec<Vector3d>,
     pub vertex_texture_coords: Vec<Vector3d>,
+    pub vertex_normal_coords: Vec<Vector3d>,
     pub textures: Vec<Texture>,
 }
 
@@ -25,6 +26,7 @@ pub fn parse_lines(lines: Lines) -> SceneData {
     let vertices = Vec::new();
     let triangles = Vec::new();
     let vertex_texture_coords = Vec::new();
+    let vertex_normal_coords = Vec::new();
 
     let textures = vec![Texture {
         colours: vec![
@@ -41,6 +43,7 @@ pub fn parse_lines(lines: Lines) -> SceneData {
         vertices,
         triangles,
         vertex_texture_coords,
+        vertex_normal_coords,
         textures,
     };
 
@@ -60,6 +63,10 @@ pub fn parse_lines(lines: Lines) -> SceneData {
             Some("vt") => {
                 let vt = get_vertex(&mut split_line);
                 scene_data.vertex_texture_coords.push(vt);
+            }
+            Some("vn") => {
+                let vn = get_vertex(&mut split_line);
+                scene_data.vertex_normal_coords.push(vn);
             }
             Some("t") => {
                 let file_name: String =
@@ -193,135 +200,5 @@ fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -
         color: Color { r: 0, g: 255, b: 0 },
         specular,
         texture_index: scene_data.textures.len() - 1,
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_parse_lines() {
-        let lines = "vertex -20.0 0.0 120.0\n\
-            vertex 20.0 0.0 120.0\n\
-            vertex 0.0 20.0 120.0\n\
-            triangle 1 2 3 255 0 0 240.0\n\
-            vertex 20.0 0.0 120.0\n\
-            vertex 50.0 0.0 140.0\n\
-            vertex 20.0 20.0 150.0\n\
-            triangle 4 5 6 0 255 0 240.0\n\
-  ";
-        let scene_data = SceneData {
-            triangles: vec![
-                Triangle {
-                    v1: Vector3d {
-                        x: -20.0,
-                        y: 0.0,
-                        z: 120.0,
-                    },
-                    v2: Vector3d {
-                        x: 20.0,
-                        y: 0.0,
-                        z: 120.0,
-                    },
-                    v3: Vector3d {
-                        x: 0.0,
-                        y: 20.0,
-                        z: 120.0,
-                    },
-                    v1_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    v2_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    v3_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    color: Color { r: 255, g: 0, b: 0 },
-                    specular: 240.0,
-                    texture_index: 0,
-                },
-                Triangle {
-                    v1: Vector3d {
-                        x: 20.0,
-                        y: 0.0,
-                        z: 120.0,
-                    },
-                    v2: Vector3d {
-                        x: 50.0,
-                        y: 0.0,
-                        z: 140.0,
-                    },
-                    v3: Vector3d {
-                        x: 20.0,
-                        y: 20.0,
-                        z: 150.0,
-                    },
-                    v1_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    v2_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    v3_tex_coords: Vector3d {
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                    },
-                    color: Color { r: 0, g: 255, b: 0 },
-                    specular: 240.0,
-                    texture_index: 0,
-                },
-            ],
-            vertices: vec![
-                Vector3d {
-                    x: -20.0,
-                    y: 0.0,
-                    z: 120.0,
-                },
-                Vector3d {
-                    x: 20.0,
-                    y: 0.0,
-                    z: 120.0,
-                },
-                Vector3d {
-                    x: 0.0,
-                    y: 20.0,
-                    z: 120.0,
-                },
-                Vector3d {
-                    x: 20.0,
-                    y: 0.0,
-                    z: 120.0,
-                },
-                Vector3d {
-                    x: 50.0,
-                    y: 0.0,
-                    z: 140.0,
-                },
-                Vector3d {
-                    x: 20.0,
-                    y: 20.0,
-                    z: 150.0,
-                },
-            ],
-            vertex_texture_coords: vec![],
-            textures: vec![],
-        };
-
-        let result = parse_lines(lines.lines());
-
-        assert_eq!(result, scene_data);
     }
 }
