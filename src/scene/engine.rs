@@ -1,6 +1,6 @@
 use crate::file_management::utils::SceneData;
 
-use super::entities::{Color, Light, Triangle};
+use super::entities::{Color, Light, Texture, Triangle};
 use minifb::{Window, WindowOptions};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -96,17 +96,12 @@ impl Vector3d {
 }
 
 #[derive(Copy, Clone)]
-pub struct IntersectionResult {
+pub struct IntersectionResult<'a> {
     t: f64,
     u: f64,
     v: f64,
+    triangle: &'a Triangle,
 }
-
-static NO_INTERSECTION: IntersectionResult = IntersectionResult {
-    t: f64::INFINITY,
-    u: 0.0,
-    v: 0.0,
-};
 
 struct Viewport {
     width: f64,
@@ -185,7 +180,7 @@ impl Scene {
             origin: Vector3d {
                 x: 0.0,
                 y: 0.0,
-                z: 0.0,
+                z: -60.0,
             },
             viewport: Viewport::default(),
             canvas: Canvas::new(width, height),
@@ -226,27 +221,50 @@ impl Scene {
     }
 
     fn trace_ray_for_triangles(&self, origin: Vector3d, direction: Vector3d) -> Color {
+        let mut closest_intersection_result = Option::<IntersectionResult>::None;
         let mut closest_t = f64::INFINITY;
-        let mut closest_triangle = Option::<&Triangle>::None;
 
         for triangle in self.scene_data.triangles.iter() {
-            let IntersectionResult { t, u, v } =
-                self.intersect_ray_with_triangle(origin, direction, triangle);
+            let intersection_result = self.intersect_ray_with_triangle(origin, direction, triangle);
 
-            if t < closest_t {
-                closest_t = t;
-                closest_triangle = Some(triangle);
+            if let Some(intersection) = intersection_result {
+                if intersection.t < closest_t {
+                    closest_intersection_result = Some(intersection);
+                    closest_t = intersection.t;
+                }
             }
         }
 
-        if let Some(tri) = closest_triangle {
+        if let Some(intersection) = closest_intersection_result {
             let p = origin + direction * closest_t;
-            let a = tri.v2 - tri.v1;
-            let b = tri.v3 - tri.v1;
+            let a = intersection.triangle.v2 - intersection.triangle.v1;
+            let b = intersection.triangle.v3 - intersection.triangle.v1;
 
             let n = a.cross(&b);
 
-            return tri.color * self.compute_lighting_intensity(&p, &n, &-direction, tri.specular);
+            let tex = &self.scene_data.textures[intersection.triangle.texture_index];
+
+            let w = 1.0 - intersection.u - intersection.v;
+
+            let tex_x = intersection.triangle.v1_tex_coords.x * intersection.u
+                + intersection.triangle.v2_tex_coords.x * intersection.v
+                + intersection.triangle.v3_tex_coords.x * w;
+            let tex_y = intersection.triangle.v1_tex_coords.y * intersection.u
+                + intersection.triangle.v2_tex_coords.y * intersection.v
+                + intersection.triangle.v3_tex_coords.y * w;
+
+            let tex_x_index = ((tex_x as usize * tex.width) as usize) % tex.width;
+            let tex_y_index = ((tex_y as usize * tex.height) as usize) % tex.height;
+
+            let col = tex.colours[tex.width * tex_y_index + tex_x_index];
+
+            return col
+                * self.compute_lighting_intensity(
+                    &p,
+                    &n,
+                    &-direction,
+                    intersection.triangle.specular,
+                );
         } else {
             return WHITE; // nothing, void
         }
@@ -255,12 +273,12 @@ impl Scene {
     /// Use the Möller–Trumbore intersection algorithm to return the distance
     /// to the point where the ray vector D coming from the origin O intersects
     /// with the triangle (returns SINFINITY if it doesnt intersect at all)
-    fn intersect_ray_with_triangle(
+    fn intersect_ray_with_triangle<'a>(
         &self,
         origin: Vector3d,
         direction: Vector3d,
-        triangle: &Triangle,
-    ) -> IntersectionResult {
+        triangle: &'a Triangle,
+    ) -> Option<IntersectionResult<'a>> {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
         let h = direction.cross(&edge2);
@@ -269,7 +287,7 @@ impl Scene {
 
         if a > -f64::EPSILON && a < f64::EPSILON {
             // This ray is parallel to this triangle.
-            return NO_INTERSECTION;
+            return None;
         }
 
         let f = 1.0 / a;
@@ -277,28 +295,29 @@ impl Scene {
         let u = f * s.dot(&h);
 
         if u < 0.0 || u > 1.0 {
-            return IntersectionResult {
-                t: f64::INFINITY,
-                u: 0.0,
-                v: 0.0,
-            };
+            return None;
         }
 
         let q = s.cross(&edge1);
         let v = f * direction.dot(&q);
 
         if v < 0.0 || u + v > 1.0 {
-            return NO_INTERSECTION;
+            return None;
         }
 
         // At this stage we can compute t to find out where the intersection point is on the line.
         let t = f * edge2.dot(&q);
 
         if t > f64::EPSILON {
-            return IntersectionResult { t, u, v };
+            return Some(IntersectionResult {
+                t,
+                u,
+                v,
+                triangle: &triangle,
+            });
         }
 
-        return NO_INTERSECTION;
+        return None;
     }
 
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.

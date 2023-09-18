@@ -45,4 +45,12 @@ pub struct Triangle {
     pub v3_tex_coords: Vector3d,
     pub color: Color,
     pub specular: f64,
+    pub texture_index: usize,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Texture {
+    pub colours: Vec<Color>,
+    pub width: usize,
+    pub height: usize,
 }

@@ -1,14 +1,15 @@
 use std::fmt::Debug;
-use std::str::{FromStr, Lines, Split};
+use std::str::{FromStr, Lines, Split, SplitWhitespace};
 
 use crate::scene::engine::Vector3d;
-use crate::scene::entities::{Color, Triangle};
+use crate::scene::entities::{Color, Texture, Triangle};
 
 #[derive(Debug, PartialEq)]
 pub struct SceneData {
     pub triangles: Vec<Triangle>,
     pub vertices: Vec<Vector3d>,
     pub vertex_texture_coords: Vec<Vector3d>,
+    pub textures: Vec<Texture>,
 }
 
 static DEFAULT_VERTEX_TEXTURE_COORDS: &Vector3d = &Vector3d {
@@ -23,37 +24,54 @@ pub fn parse_lines(lines: Lines) -> SceneData {
     let triangles = Vec::new();
     let vertex_texture_coords = Vec::new();
 
-    let mut scene_data = SceneData {
+    let textures = vec![Texture {
+        colours: vec![
+            Color { r: 255, g: 0, b: 0 },
+            Color { r: 255, g: 0, b: 0 },
+            Color { r: 255, g: 0, b: 0 },
+            Color { r: 255, g: 0, b: 0 },
+        ],
+        width: 2,
+        height: 2,
+    }];
+
+    let mut scene_data: SceneData = SceneData {
         vertices,
         triangles,
         vertex_texture_coords,
+        textures,
     };
 
     for line in lines {
-        let mut split_line = line.split(" ");
+        let mut split_line = line.split_whitespace();
         let line_type = split_line.next();
 
+        println!("{line}");
+
         match line_type {
-            Some("vertex") => {
+            Some("v") => {
                 let v = get_vertex(&mut split_line);
                 scene_data.vertices.push(v);
             }
-            Some("triangle") => {
+            Some("f") => {
                 let tri = get_triangle(&mut split_line, &scene_data);
                 scene_data.triangles.push(tri);
             }
-            Some("vertex_texture_coord") => {
-                let vt = get_vertex(&mut split_line);
-                scene_data.vertex_texture_coords.push(vt);
+            Some("vt") => {
+                // let vt = get_vertex(&mut split_line);
+                // scene_data.vertex_texture_coords.push(vt);
             }
-            _ => panic!("unknown line type"),
+            Some(&_) => {}
+            None => {}
         }
     }
 
     scene_data
 }
 
-fn parse_next_value_from_split<T: FromStr>(line: &mut Split<'_, &str>) -> Option<T>
+fn parse_next_value_from_split<'a, T: FromStr>(
+    mut line: &mut impl Iterator<Item = &'a str>,
+) -> Option<T>
 where
     <T as FromStr>::Err: Debug,
 {
@@ -64,7 +82,7 @@ where
     }
 }
 
-fn get_vertex(mut line: &mut Split<'_, &str>) -> Vector3d {
+fn get_vertex(mut line: &mut SplitWhitespace<'_>) -> Vector3d {
     let x: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
     let y: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
     let z: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
@@ -87,7 +105,7 @@ fn get_vertex_attributes<'a>(line: &str) -> (usize, Option<usize>) {
     return (index, tex_coord_index);
 }
 
-fn get_triangle(line: &mut Split<'_, &str>, scene_data: &SceneData) -> Triangle {
+fn get_triangle<'a>(line: &'a mut SplitWhitespace<'_>, scene_data: &SceneData) -> Triangle {
     let v1_attribute_string: String =
         parse_next_value_from_split(line).expect("No data for vertex 1");
     let v2_attribute_string: String =
@@ -146,6 +164,7 @@ fn get_triangle(line: &mut Split<'_, &str>, scene_data: &SceneData) -> Triangle 
         v3_tex_coords: *v3_tex_coords,
         color: Color { r: 0, g: 255, b: 0 },
         specular,
+        texture_index: 0,
     }
 }
 
@@ -199,6 +218,7 @@ mod test {
                     },
                     color: Color { r: 255, g: 0, b: 0 },
                     specular: 240.0,
+                    texture_index: 0,
                 },
                 Triangle {
                     v1: Vector3d {
@@ -233,6 +253,7 @@ mod test {
                     },
                     color: Color { r: 0, g: 255, b: 0 },
                     specular: 240.0,
+                    texture_index: 0,
                 },
             ],
             vertices: vec![
@@ -268,6 +289,7 @@ mod test {
                 },
             ],
             vertex_texture_coords: vec![],
+            textures: vec![],
         };
 
         let result = parse_lines(lines.lines());
