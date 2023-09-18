@@ -248,12 +248,12 @@ impl Scene {
 
             let w = 1.0 - intersection.u - intersection.v;
 
-            let tex_x = intersection.triangle.v1_tex_coords.x * intersection.u
-                + intersection.triangle.v2_tex_coords.x * intersection.v
-                + intersection.triangle.v3_tex_coords.x * w;
-            let tex_y = intersection.triangle.v1_tex_coords.y * intersection.u
-                + intersection.triangle.v2_tex_coords.y * intersection.v
-                + intersection.triangle.v3_tex_coords.y * w;
+            let tex_x = intersection.triangle.v2_tex_coords.x * intersection.u
+                + intersection.triangle.v3_tex_coords.x * intersection.v
+                + intersection.triangle.v1_tex_coords.x * w;
+            let tex_y = intersection.triangle.v2_tex_coords.y * intersection.u
+                + intersection.triangle.v3_tex_coords.y * intersection.v
+                + intersection.triangle.v1_tex_coords.y * w;
 
             let tex_x_index = ((tex_x * tex.width as f64) as usize) % tex.width;
             let tex_y_index = ((tex_y * tex.height as f64) as usize) % tex.height;
