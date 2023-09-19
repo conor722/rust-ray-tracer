@@ -1,10 +1,12 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
+#[derive(Copy, Clone)]
 pub enum AABBInnerGeometry<'a> {
     Empty {},
     Triangle { triangle: &'a Triangle },
 }
 
+#[derive(Copy, Clone)]
 pub struct AABB<'a> {
     pub min_coords: Vector3d,
     pub max_coords: Vector3d,
@@ -12,7 +14,7 @@ pub struct AABB<'a> {
 }
 
 impl AABB<'_> {
-    fn new(
+    pub fn new(
         min_x: f64,
         max_x: f64,
         min_y: f64,
@@ -35,7 +37,7 @@ impl AABB<'_> {
         }
     }
 
-    fn from_triangle<'a>(triangle: &'a Triangle) -> AABB<'a> {
+    pub fn from_triangle<'a>(triangle: &'a Triangle) -> AABB<'a> {
         let min_x = f64::min(triangle.v1.x, f64::min(triangle.v2.x, triangle.v3.x));
         let max_x = f64::max(triangle.v1.x, f64::max(triangle.v2.x, triangle.v3.x));
 
@@ -62,7 +64,7 @@ impl AABB<'_> {
         }
     }
 
-    fn intersects(self, other: &Self) -> bool {
+    pub fn intersects(self, other: &Self) -> bool {
         if (self.max_coords.x < other.min_coords.x || self.min_coords.x > other.max_coords.x) {
             return false;
         }
