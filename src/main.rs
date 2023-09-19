@@ -60,6 +60,6 @@ fn main() {
 
     while scene.canvas.window.is_open() && !scene.canvas.window.is_key_down(Key::Escape) {
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
-        scene.canvas.update();
+        // scene.canvas.update();
     }
 }
