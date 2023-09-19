@@ -1,3 +1,4 @@
+mod collision;
 mod file_management;
 mod scene;
 
