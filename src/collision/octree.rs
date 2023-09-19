@@ -1,8 +1,4 @@
-use std::{
-    borrow::BorrowMut,
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::cell::RefCell;
 
 use crate::scene::engine::Vector3d;
 
@@ -139,7 +135,6 @@ impl<'a> Octree<'a> {
             top_back_right,
         ] {
             let mut lg: Option<&AABB> = None;
-            let mut intersects: bool = false;
 
             if let Some(l) = geometry {
                 if l.intersects(&abb) {

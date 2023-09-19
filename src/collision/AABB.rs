@@ -65,13 +65,13 @@ impl AABB<'_> {
     }
 
     pub fn intersects(self, other: &Self) -> bool {
-        if (self.max_coords.x < other.min_coords.x || self.min_coords.x > other.max_coords.x) {
+        if self.max_coords.x < other.min_coords.x || self.min_coords.x > other.max_coords.x {
             return false;
         }
-        if (self.max_coords.y < other.min_coords.y || self.min_coords.y > other.max_coords.y) {
+        if self.max_coords.y < other.min_coords.y || self.min_coords.y > other.max_coords.y {
             return false;
         }
-        if (self.max_coords.z < other.min_coords.z || self.min_coords.z > other.max_coords.z) {
+        if self.max_coords.z < other.min_coords.z || self.min_coords.z > other.max_coords.z {
             return false;
         }
         return true;
