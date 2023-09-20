@@ -55,14 +55,10 @@ impl Octree {
             let octant_aabb_index = self.octant_AABB_map.get(&octant_index).unwrap();
             let octant_aabb = self.AABBs.get(*octant_aabb_index).unwrap();
 
-            intersects = aabb.clone().intersects(octant_aabb);
+            intersects = aabb.intersects(octant_aabb);
             current_octant_has_triangle =
                 self.octant_triangle_map.get(&octant_index).unwrap().len() > 0;
-            children = self
-                .octant_child_map
-                .get(&octant_index)
-                .unwrap_or(&vec![])
-                .clone();
+            children = self.octant_child_map.get(&octant_index).unwrap().clone();
             is_leaf_octant = children.len() == 0;
         }
 

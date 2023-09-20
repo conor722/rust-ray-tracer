@@ -114,7 +114,7 @@ impl Ray {
             }
         }
 
-        let child_octants = octree.octant_child_map.get(&octant_index).unwrap().clone();
+        let child_octants = octree.octant_child_map.get(&octant_index).unwrap();
 
         let mut child_octant_intersection_distances = vec![];
 
@@ -134,7 +134,7 @@ impl Ray {
         child_octant_intersection_distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
         for (_, coi) in child_octant_intersection_distances {
-            let res = self.intersect_with_octant(octree, coi);
+            let res = self.intersect_with_octant(octree, *coi);
 
             if let Some(rti) = res {
                 intersected_triangle_in_child_octant_distance = rti.t;

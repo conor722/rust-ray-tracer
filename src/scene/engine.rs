@@ -263,56 +263,6 @@ impl Scene {
         }
     }
 
-    /// Use the Möller–Trumbore intersection algorithm to return the distance
-    /// to the point where the ray vector D coming from the origin O intersects
-    /// with the triangle (returns SINFINITY if it doesnt intersect at all)
-    fn intersect_ray_with_triangle<'a>(
-        &self,
-        origin: Vector3d,
-        direction: Vector3d,
-        triangle: &'a Triangle,
-    ) -> Option<IntersectionResult<'a>> {
-        let edge1 = triangle.v2 - triangle.v1;
-        let edge2 = triangle.v3 - triangle.v1;
-        let h = direction.cross(&edge2);
-
-        let a = edge1.dot(&h);
-
-        if a > -f64::EPSILON && a < f64::EPSILON {
-            // This ray is parallel to this triangle.
-            return None;
-        }
-
-        let f = 1.0 / a;
-        let s = origin - triangle.v1;
-        let u = f * s.dot(&h);
-
-        if u < 0.0 || u > 1.0 {
-            return None;
-        }
-
-        let q = s.cross(&edge1);
-        let v = f * direction.dot(&q);
-
-        if v < 0.0 || u + v > 1.0 {
-            return None;
-        }
-
-        // At this stage we can compute t to find out where the intersection point is on the line.
-        let t = f * edge2.dot(&q);
-
-        if t > f64::EPSILON {
-            return Some(IntersectionResult {
-                t,
-                u,
-                v,
-                triangle: &triangle,
-            });
-        }
-
-        return None;
-    }
-
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(
         &self,
