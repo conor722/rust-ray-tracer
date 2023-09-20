@@ -1,6 +1,6 @@
 use crate::{collision::ray::Ray, file_management::utils::SceneData};
 
-use super::entities::{Color, Light, Triangle};
+use super::entities::{Color, Light};
 use minifb::{Window, WindowOptions};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
@@ -93,14 +93,6 @@ impl Vector3d {
             z: self.x * other.y - self.y * other.x,
         }
     }
-}
-
-#[derive(Copy, Clone)]
-pub struct IntersectionResult<'a> {
-    t: f64,
-    u: f64,
-    v: f64,
-    triangle: &'a Triangle,
 }
 
 struct Viewport {
@@ -203,7 +195,7 @@ impl Scene {
 
                 // println!("finished drawing ray at {x}, {y}");
             }
-            self.canvas.update();
+            // self.canvas.update();
         }
     }
 

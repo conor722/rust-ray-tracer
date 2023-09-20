@@ -1,6 +1,6 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
-use super::{octree::Octree, AABB::AABB};
+use super::{aabb::Aabb, octree::Octree};
 
 pub struct RayTriangleIntersectionResult<'a> {
     pub t: f64,
@@ -18,7 +18,7 @@ pub struct Ray {
 }
 
 impl Ray {
-    pub fn intersect_AABB(&self, aabb: &AABB) -> Option<RayAABBIntersectionResult> {
+    pub fn intersect_aabb(&self, aabb: &Aabb) -> Option<RayAABBIntersectionResult> {
         let t1: f64 = (aabb.min_coords.x - self.origin.x) / self.direction.x;
         let t2: f64 = (aabb.max_coords.x - self.origin.x) / self.direction.x;
         let t3: f64 = (aabb.min_coords.y - self.origin.y) / self.direction.y;
@@ -98,6 +98,10 @@ impl Ray {
         octree: &'a Octree,
         octant_index: usize,
     ) -> Option<RayTriangleIntersectionResult<'a>> {
+        if *octree.octant_triangle_count_map.get(&octant_index).unwrap() == 0 {
+            return None;
+        }
+
         let triangles_at_octant = octree.octant_triangle_map.get(&octant_index).unwrap();
         let mut intersected_triangle_in_octant: Option<RayTriangleIntersectionResult> = None;
         let mut closest_triangle_in_octant_distance = f64::INFINITY;
@@ -119,9 +123,9 @@ impl Ray {
         let mut child_octant_intersection_distances = vec![];
 
         for coi in child_octants {
-            let child_octant_aabb_index = octree.octant_AABB_map.get(&coi).unwrap();
-            let child_octant_aabb = octree.AABBs.get(*child_octant_aabb_index).unwrap();
-            let child_octant_ray_intersection = self.intersect_AABB(child_octant_aabb);
+            let child_octant_aabb_index = octree.octant_aabb_map.get(&coi).unwrap();
+            let child_octant_aabb = octree.aabbs.get(*child_octant_aabb_index).unwrap();
+            let child_octant_ray_intersection = self.intersect_aabb(child_octant_aabb);
 
             if let Some(coirs) = child_octant_ray_intersection {
                 child_octant_intersection_distances.push((coirs.t, coi));

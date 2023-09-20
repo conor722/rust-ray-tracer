@@ -1,14 +1,14 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub struct AABB {
+pub struct Aabb {
     pub min_coords: Vector3d,
     pub max_coords: Vector3d,
 }
 
-impl AABB {
-    pub fn new(min_x: f64, max_x: f64, min_y: f64, max_y: f64, min_z: f64, max_z: f64) -> AABB {
-        AABB {
+impl Aabb {
+    pub fn new(min_x: f64, max_x: f64, min_y: f64, max_y: f64, min_z: f64, max_z: f64) -> Aabb {
+        Aabb {
             min_coords: Vector3d {
                 x: min_x,
                 y: min_y,
@@ -22,7 +22,7 @@ impl AABB {
         }
     }
 
-    pub fn from_triangle<'a>(triangle: &Triangle) -> AABB {
+    pub fn from_triangle<'a>(triangle: &Triangle) -> Aabb {
         let min_x = f64::min(triangle.v1.x, f64::min(triangle.v2.x, triangle.v3.x));
         let max_x = f64::max(triangle.v1.x, f64::max(triangle.v2.x, triangle.v3.x));
 
@@ -32,7 +32,7 @@ impl AABB {
         let min_z = f64::min(triangle.v1.z, f64::min(triangle.v2.z, triangle.v3.z));
         let max_z = f64::max(triangle.v1.z, f64::max(triangle.v2.z, triangle.v3.z));
 
-        AABB {
+        Aabb {
             min_coords: Vector3d {
                 x: min_x,
                 y: min_y,

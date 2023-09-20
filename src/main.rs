@@ -2,6 +2,7 @@ mod collision;
 mod file_management;
 mod scene;
 
+use std::time::Instant;
 use std::{fs, vec};
 
 use minifb::Key;
@@ -54,11 +55,14 @@ fn main() {
         .window
         .limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
+    let now = Instant::now();
     scene.draw_scene();
+    let elapsed = now.elapsed();
+    println!("It took: {:.2?} to draw the scene", elapsed);
 
     println!("draw finished");
 
     while scene.canvas.window.is_open() && !scene.canvas.window.is_key_down(Key::Escape) {
-        // scene.canvas.update();
+        scene.canvas.update();
     }
 }
