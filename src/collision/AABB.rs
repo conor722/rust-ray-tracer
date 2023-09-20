@@ -1,6 +1,6 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct AABB {
     pub min_coords: Vector3d,
     pub max_coords: Vector3d,

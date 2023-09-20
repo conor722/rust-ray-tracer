@@ -30,7 +30,7 @@ pub fn parse_lines<'a>(lines: Lines) -> SceneData {
     let vertex_texture_coords = Vec::new();
     let vertex_normal_coords = Vec::new();
 
-    let octree: Octree = Octree::new(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0);
+    let octree: Octree = Octree::new(-20.0, 20.0, -20.0, 20.0, -20.0, 20.0);
 
     let textures = vec![Texture {
         colours: vec![

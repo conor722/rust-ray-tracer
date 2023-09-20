@@ -2,19 +2,19 @@ use crate::scene::{engine::Vector3d, entities::Triangle};
 
 use super::{octree::Octree, AABB::AABB};
 
-struct RayTriangleIntersectionResult<'a> {
-    t: f64,
-    u: f64,
-    v: f64,
-    triangle: &'a Triangle,
+pub struct RayTriangleIntersectionResult<'a> {
+    pub t: f64,
+    pub u: f64,
+    pub v: f64,
+    pub triangle: &'a Triangle,
 }
-struct RayAABBIntersectionResult {
+pub struct RayAABBIntersectionResult {
     t: f64,
 }
 
-struct Ray {
-    origin: Vector3d,
-    direction: Vector3d,
+pub struct Ray {
+    pub origin: Vector3d,
+    pub direction: Vector3d,
 }
 
 impl Ray {
@@ -93,22 +93,28 @@ impl Ray {
         return None;
     }
 
-    fn intersect_with_octant<'a>(
+    pub fn intersect_with_octant<'a>(
         &self,
         octree: &'a Octree,
         octant_index: usize,
     ) -> Option<RayTriangleIntersectionResult<'a>> {
-        if octree.octant_triangle_map.contains_key(&octant_index) {
-            let triangle_index = octree.octant_triangle_map.get(&octant_index).unwrap();
-            let triangle = octree.triangles.get(*triangle_index).unwrap();
+        let triangles_at_octant = octree.octant_triangle_map.get(&octant_index).unwrap();
+        let mut intersected_triangle_in_octant: Option<RayTriangleIntersectionResult> = None;
+        let mut closest_triangle_in_octant_distance = f64::INFINITY;
 
-            return self.intersect_with_triangle(triangle);
+        for triangle_index in triangles_at_octant {
+            let this_triangle = octree.triangles.get(*triangle_index).unwrap();
+            let this_triangle_intersection = self.intersect_with_triangle(this_triangle);
+
+            if let Some(tri) = this_triangle_intersection {
+                if tri.t < closest_triangle_in_octant_distance {
+                    closest_triangle_in_octant_distance = tri.t;
+                    intersected_triangle_in_octant = Some(tri);
+                }
+            }
         }
 
         let child_octants = octree.octant_child_map.get(&octant_index).unwrap().clone();
-        let child_octant_aab_indices = child_octants.iter().map(|i| {
-            let aabb_index = octree.octant_AABB_map.get(i).unwrap();
-        });
 
         let mut child_octant_intersection_distances = vec![];
 
@@ -122,16 +128,26 @@ impl Ray {
             }
         }
 
+        let mut intersected_triangle_in_child_octant: Option<RayTriangleIntersectionResult> = None;
+        let mut intersected_triangle_in_child_octant_distance = f64::INFINITY;
+
         child_octant_intersection_distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
         for (_, coi) in child_octant_intersection_distances {
             let res = self.intersect_with_octant(octree, coi);
 
             if let Some(rti) = res {
-                return Some(rti);
+                intersected_triangle_in_child_octant_distance = rti.t;
+                intersected_triangle_in_child_octant = Some(rti);
+
+                break;
             }
         }
 
-        return None;
+        if intersected_triangle_in_child_octant_distance < closest_triangle_in_octant_distance {
+            return intersected_triangle_in_child_octant;
+        } else {
+            return intersected_triangle_in_octant;
+        }
     }
 }

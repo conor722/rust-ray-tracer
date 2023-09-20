@@ -1,4 +1,4 @@
-use crate::file_management::utils::SceneData;
+use crate::{collision::ray::Ray, file_management::utils::SceneData};
 
 use super::entities::{Color, Light, Triangle};
 use minifb::{Window, WindowOptions};
@@ -201,7 +201,7 @@ impl Scene {
 
                 self.canvas.put_pixel(x, y, color.into());
 
-                println!("finished drawing ray at {x}, {y}");
+                // println!("finished drawing ray at {x}, {y}");
             }
             self.canvas.update();
         }
@@ -224,22 +224,12 @@ impl Scene {
     }
 
     fn trace_ray_for_triangles(&self, origin: Vector3d, direction: Vector3d) -> Color {
-        let mut closest_intersection_result = Option::<IntersectionResult>::None;
-        let mut closest_t = f64::INFINITY;
+        let ray = Ray { origin, direction };
 
-        for triangle in self.scene_data.triangles.iter() {
-            let intersection_result = self.intersect_ray_with_triangle(origin, direction, triangle);
+        let triangle_intersection = ray.intersect_with_octant(&self.scene_data.octree, 0);
 
-            if let Some(intersection) = intersection_result {
-                if intersection.t < closest_t {
-                    closest_intersection_result = Some(intersection);
-                    closest_t = intersection.t;
-                }
-            }
-        }
-
-        if let Some(intersection) = closest_intersection_result {
-            let p = origin + direction * closest_t;
+        if let Some(intersection) = triangle_intersection {
+            let p = origin + direction * intersection.t;
 
             let tex = &self.scene_data.textures[intersection.triangle.texture_index];
 
@@ -256,11 +246,6 @@ impl Scene {
             let tex_y_index = ((tex_y * tex.height as f64) as usize) % tex.height;
 
             let col = tex.colours[tex.width * tex_y_index + tex_x_index];
-
-            println!(
-                "found col={:?}, tex_x_index={}, tex_y_index={}, tex_width={}, tex_height={}, tex_x={}, tex_y={}",
-                col, tex_x_index, tex_y_index, tex.width, tex.height, tex_x, tex_y
-            );
 
             let n = intersection.triangle.v2_normal_coords * intersection.u
                 + intersection.triangle.v3_normal_coords * intersection.v
