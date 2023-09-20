@@ -1,10 +1,15 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
-use super::AABB::AABB;
+use super::{octree::Octree, AABB::AABB};
 
-enum RayIntersectionResult {
-    TriangleResult { t: f64, u: f64, v: f64 },
-    AABBResult { t: f64 },
+struct RayTriangleIntersectionResult<'a> {
+    t: f64,
+    u: f64,
+    v: f64,
+    triangle: &'a Triangle,
+}
+struct RayAABBIntersectionResult {
+    t: f64,
 }
 
 struct Ray {
@@ -13,7 +18,7 @@ struct Ray {
 }
 
 impl Ray {
-    pub fn intersect_AABB(&self, aabb: &AABB) -> Option<RayIntersectionResult> {
+    pub fn intersect_AABB(&self, aabb: &AABB) -> Option<RayAABBIntersectionResult> {
         let t1: f64 = (aabb.min_coords.x - self.origin.x) / self.direction.x;
         let t2: f64 = (aabb.max_coords.x - self.origin.x) / self.direction.x;
         let t3: f64 = (aabb.min_coords.y - self.origin.y) / self.direction.y;
@@ -42,16 +47,16 @@ impl Ray {
 
         // Intersection has occured but O + D * tmin will be behind origin, so use tmax for closest intersection point
         if tmin < 0.0 {
-            return Some(RayIntersectionResult::AABBResult { t: tmax });
+            return Some(RayAABBIntersectionResult { t: tmax });
         }
 
-        return Some(RayIntersectionResult::AABBResult { t: tmin });
+        return Some(RayAABBIntersectionResult { t: tmin });
     }
 
-    pub fn intersect_ray_with_triangle(
+    pub fn intersect_with_triangle<'a>(
         &self,
-        triangle: &Triangle,
-    ) -> Option<RayIntersectionResult> {
+        triangle: &'a Triangle,
+    ) -> Option<RayTriangleIntersectionResult<'a>> {
         let edge1 = triangle.v2 - triangle.v1;
         let edge2 = triangle.v3 - triangle.v1;
         let h = self.direction.cross(&edge2);
@@ -82,7 +87,49 @@ impl Ray {
         let t = f * edge2.dot(&q);
 
         if t > f64::EPSILON {
-            return Some(RayIntersectionResult::TriangleResult { t, u, v });
+            return Some(RayTriangleIntersectionResult { t, u, v, triangle });
+        }
+
+        return None;
+    }
+
+    fn intersect_with_octant<'a>(
+        &self,
+        octree: &'a Octree,
+        octant_index: usize,
+    ) -> Option<RayTriangleIntersectionResult<'a>> {
+        if octree.octant_triangle_map.contains_key(&octant_index) {
+            let triangle_index = octree.octant_triangle_map.get(&octant_index).unwrap();
+            let triangle = octree.triangles.get(*triangle_index).unwrap();
+
+            return self.intersect_with_triangle(triangle);
+        }
+
+        let child_octants = octree.octant_child_map.get(&octant_index).unwrap().clone();
+        let child_octant_aab_indices = child_octants.iter().map(|i| {
+            let aabb_index = octree.octant_AABB_map.get(i).unwrap();
+        });
+
+        let mut child_octant_intersection_distances = vec![];
+
+        for coi in child_octants {
+            let child_octant_aabb_index = octree.octant_AABB_map.get(&coi).unwrap();
+            let child_octant_aabb = octree.AABBs.get(*child_octant_aabb_index).unwrap();
+            let child_octant_ray_intersection = self.intersect_AABB(child_octant_aabb);
+
+            if let Some(coirs) = child_octant_ray_intersection {
+                child_octant_intersection_distances.push((coirs.t, coi));
+            }
+        }
+
+        child_octant_intersection_distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+        for (_, coi) in child_octant_intersection_distances {
+            let res = self.intersect_with_octant(octree, coi);
+
+            if let Some(rti) = res {
+                return Some(rti);
+            }
         }
 
         return None;

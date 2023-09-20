@@ -63,7 +63,8 @@ pub fn parse_lines<'a>(lines: Lines) -> SceneData {
             }
             Some("f") => {
                 let tri = get_triangle(&mut split_line, &scene_data);
-                scene_data.triangles.push(tri);
+                scene_data.octree.push_triangle(tri.clone());
+                scene_data.triangles.push(tri.clone());
             }
             Some("vt") => {
                 let vt = get_vertex(&mut split_line);
