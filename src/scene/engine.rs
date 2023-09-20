@@ -195,7 +195,7 @@ impl Scene {
 
                 // println!("finished drawing ray at {x}, {y}");
             }
-            // self.canvas.update();
+            self.canvas.update();
         }
     }
 
