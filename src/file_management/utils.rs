@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::str::{FromStr, Lines, SplitWhitespace};
 
+use crate::collision::octree::Octree;
 use crate::scene::engine::Vector3d;
 use crate::scene::entities::{Color, Texture, Triangle};
 
@@ -13,6 +14,7 @@ pub struct SceneData {
     pub vertex_texture_coords: Vec<Vector3d>,
     pub vertex_normal_coords: Vec<Vector3d>,
     pub textures: Vec<Texture>,
+    pub octree: Octree,
 }
 
 static DEFAULT_VERTEX_TEXTURE_COORDS: &Vector3d = &Vector3d {
@@ -22,11 +24,13 @@ static DEFAULT_VERTEX_TEXTURE_COORDS: &Vector3d = &Vector3d {
 };
 static MISSING_VERTEX_ERROR_MESSAGE: &str = "No vertex with this index";
 
-pub fn parse_lines(lines: Lines) -> SceneData {
+pub fn parse_lines<'a>(lines: Lines) -> SceneData {
     let vertices = Vec::new();
     let triangles = Vec::new();
     let vertex_texture_coords = Vec::new();
     let vertex_normal_coords = Vec::new();
+
+    let octree: Octree = Octree::new(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0);
 
     let textures = vec![Texture {
         colours: vec![
@@ -45,6 +49,7 @@ pub fn parse_lines(lines: Lines) -> SceneData {
         vertex_texture_coords,
         vertex_normal_coords,
         textures,
+        octree,
     };
 
     for line in lines {

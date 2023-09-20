@@ -35,7 +35,7 @@ impl Into<u32> for Color {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Triangle {
     pub v1: Vector3d,
     pub v2: Vector3d,

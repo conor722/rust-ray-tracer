@@ -1,27 +1,13 @@
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
-#[derive(Copy, Clone)]
-pub enum AABBInnerGeometry<'a> {
-    Empty {},
-    Triangle { triangle: &'a Triangle },
-}
-
-#[derive(Copy, Clone)]
-pub struct AABB<'a> {
+#[derive(Debug, PartialEq, Clone)]
+pub struct AABB {
     pub min_coords: Vector3d,
     pub max_coords: Vector3d,
-    pub inner_geometry: AABBInnerGeometry<'a>,
 }
 
-impl AABB<'_> {
-    pub fn new(
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-        min_z: f64,
-        max_z: f64,
-    ) -> AABB<'static> {
+impl AABB {
+    pub fn new(min_x: f64, max_x: f64, min_y: f64, max_y: f64, min_z: f64, max_z: f64) -> AABB {
         AABB {
             min_coords: Vector3d {
                 x: min_x,
@@ -33,11 +19,10 @@ impl AABB<'_> {
                 y: max_y,
                 z: max_z,
             },
-            inner_geometry: AABBInnerGeometry::Empty {},
         }
     }
 
-    pub fn from_triangle<'a>(triangle: &'a Triangle) -> AABB<'a> {
+    pub fn from_triangle<'a>(triangle: &Triangle) -> AABB {
         let min_x = f64::min(triangle.v1.x, f64::min(triangle.v2.x, triangle.v3.x));
         let max_x = f64::max(triangle.v1.x, f64::max(triangle.v2.x, triangle.v3.x));
 
@@ -57,9 +42,6 @@ impl AABB<'_> {
                 x: max_x,
                 y: max_y,
                 z: max_z,
-            },
-            inner_geometry: AABBInnerGeometry::Triangle {
-                triangle: &triangle,
             },
         }
     }
