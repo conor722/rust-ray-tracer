@@ -38,7 +38,7 @@ Run the program with `cargo run <file>`.
 
 ## Misc
 
-The algorithm is incredibly slow, as for each pixel we 'cast' a ray for which we check every single triangle for an intersection, it can take minutes to draw the teapot example above. I'm probably going to optimise it to use something like an octree or a k-d tree to optimise the process of choosing triangles to test for intersection.
+The algorithm is pretty slow even after using an Octree to hold all the geometry to perform triangle intersections with, but its still faster than without. Could do with a lot more features like reflections, soft shadows, reading .mtl files to have more complex materials, and probably parallelisation to go faster. The Octree definitely needs to be optimised to be able to deal with more complex models.
 
 ## Credit
 
