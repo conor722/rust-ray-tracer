@@ -212,6 +212,9 @@ impl Scene {
                         y: y as f64 * y_scale,
                         z: z_value,
                     };
+
+                    // We are going to split the (x, y) pair into corners and render a ray for each corner,
+                    // this makes the end render result look less jagged (a form of anti aliasing)
                     let color1 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction1);
 
                     let direction2 = Vector3d {
