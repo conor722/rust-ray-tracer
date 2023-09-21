@@ -2,7 +2,12 @@ use crate::{collision::ray::Ray, file_management::utils::SceneData};
 
 use super::entities::{Color, Light};
 use minifb::{Window, WindowOptions};
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::{
+    ops::{Add, Div, Mul, Neg, Sub},
+    sync::{mpsc, Arc},
+    thread::available_parallelism,
+};
+use threadpool::ThreadPool;
 
 static WHITE: Color = Color {
     r: 255,
@@ -165,73 +170,106 @@ impl Canvas {
 /// The entrypoint class for the engine, encapsulates all entities and main classes needed to raycast a scene.
 /// The internal canvas is where the actual pixels will reside after drawing the scene.
 pub struct Scene {
-    scene_data: SceneData,
-    lights: Vec<Light>,
-    origin: Vector3d,
     viewport: Viewport,
     pub canvas: Canvas,
 }
 
 impl Scene {
-    pub fn new(width: usize, height: usize, scene_data: SceneData, lights: Vec<Light>) -> Scene {
+    pub fn new(width: usize, height: usize) -> Scene {
         Scene {
-            origin: Vector3d {
-                x: 0.0,
-                y: 0.0,
-                z: -60.0,
-            },
             viewport: Viewport::default(),
             canvas: Canvas::new(width, height),
-            lights,
-            scene_data,
         }
     }
 
     /// Render the provided vector of renderable items to its internal canvas,
     /// You still need to update the canvas for it to show the changes.
-    pub fn draw_scene(&mut self) {
-        for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
-            for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
-                let direction1 = self.canvas_to_viewport(x as f64, y as f64);
-                let color1 = self.trace_ray_for_triangles(self.origin, direction1);
+    pub fn draw_scene(&mut self, rt: RayTracer) {
+        let rt_arc = Arc::new(rt);
+        let ap = usize::from(available_parallelism().unwrap());
 
-                let direction2 = self.canvas_to_viewport(x as f64 + 0.5, y as f64);
-                let color2 = self.trace_ray_for_triangles(self.origin, direction2);
+        println!("Going to trace scene with {ap} threads");
 
-                let direction3 = self.canvas_to_viewport(x as f64, y as f64 + 0.5);
-                let color3 = self.trace_ray_for_triangles(self.origin, direction3);
+        let tp = ThreadPool::new(ap);
 
-                let direction4 = self.canvas_to_viewport(x as f64 + 0.5, y as f64 + 0.5);
-                let color4 = self.trace_ray_for_triangles(self.origin, direction4);
+        let x_scale = self.viewport.width / self.canvas.width as f64;
+        let y_scale = self.viewport.height / self.canvas.height as f64;
+        let z_value = self.viewport.distance;
+        let height = self.canvas.height as i32;
+        let width = self.canvas.width as i32;
 
-                self.canvas.put_pixel(
-                    x,
-                    y,
-                    Color::mix(&vec![color1, color2, color3, color4]).into(),
-                );
+        let (tx, rx) = mpsc::channel();
 
-                // println!("finished drawing ray at {x}, {y}");
+        for x in -(width as i32) / 2..(width as i32) / 2 {
+            for y in -(height as i32) / 2..(height as i32) / 2 {
+                let rt_arc_c = rt_arc.clone();
+                let tx_clone = tx.clone();
+
+                // Put the trace function for the ray at this point into a threadpool and go
+                tp.execute(move || {
+                    let direction1 = Vector3d {
+                        x: x as f64 * x_scale,
+                        y: y as f64 * y_scale,
+                        z: z_value,
+                    };
+                    let color1 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction1);
+
+                    let direction2 = Vector3d {
+                        x: (x as f64 + 0.5) * x_scale,
+                        y: y as f64 * y_scale,
+                        z: z_value,
+                    };
+                    let color2 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction2);
+
+                    let direction3 = Vector3d {
+                        x: x as f64 * x_scale,
+                        y: (y as f64 + 0.5) * y_scale,
+                        z: z_value,
+                    };
+                    let color3 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction3);
+
+                    let direction4 = Vector3d {
+                        x: (x as f64 + 0.5) * x_scale,
+                        y: (y as f64 + 0.5) * y_scale,
+                        z: z_value,
+                    };
+                    let color4 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction4);
+
+                    let final_color = Color::mix(&vec![color1, color2, color3, color4]);
+
+                    tx_clone.send((y, x, final_color)).unwrap();
+                })
             }
-            self.canvas.update();
         }
-    }
 
-    fn viewport_x(&self, x: f64) -> f64 {
-        x * (self.viewport.width / self.canvas.width as f64)
-    }
+        // Need to drop so the receiver will eventually terminate.
+        drop(tx);
 
-    fn viewport_y(&self, y: f64) -> f64 {
-        y * (self.viewport.height / self.canvas.height as f64)
-    }
+        let mut ctr = 0;
 
-    fn canvas_to_viewport(&self, x: f64, y: f64) -> Vector3d {
-        Vector3d {
-            x: self.viewport_x(x),
-            y: self.viewport_y(y),
-            z: self.viewport.distance,
+        for received in rx {
+            ctr += 1;
+            let (y, x, col) = received;
+            self.canvas.put_pixel(x, y, col.into());
+
+            // It looks cooler if we update the canvas during rendering, but
+            // it slows down the rendering a lot, so do it per 8000 pixels.
+            if ctr % 8000 == 0 {
+                self.canvas.update();
+            }
         }
-    }
 
+        self.canvas.update()
+    }
+}
+
+pub struct RayTracer {
+    pub scene_data: SceneData,
+    pub lights: Vec<Light>,
+    pub origin: Vector3d,
+}
+
+impl RayTracer {
     fn trace_ray_for_triangles(&self, origin: Vector3d, direction: Vector3d) -> Color {
         let ray = Ray { origin, direction };
 

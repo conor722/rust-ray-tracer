@@ -9,6 +9,8 @@ use minifb::Key;
 use scene::engine::{Scene, Vector3d};
 use scene::entities::Light;
 
+use crate::scene::engine::RayTracer;
+
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
 
@@ -25,7 +27,7 @@ fn main() {
 
     let file = fs::read_to_string(file_name).expect("Could not read file");
 
-    let triangles = file_management::utils::parse_lines(file.lines());
+    let scene_data = file_management::utils::parse_lines(file.lines());
 
     let lights = vec![
         Light::Ambient { intensity: 0.4 },
@@ -54,8 +56,16 @@ fn main() {
             },
         },
     ];
-
-    let mut scene = Scene::new(WIDTH, HEIGHT, triangles, lights);
+    let rt = RayTracer {
+        scene_data,
+        lights,
+        origin: Vector3d {
+            x: 0.0,
+            y: 0.0,
+            z: -60.0,
+        },
+    };
+    let mut scene = Scene::new(WIDTH, HEIGHT);
 
     // Limit to max ~60 fps update rate
     scene
@@ -64,7 +74,7 @@ fn main() {
         .limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     let now = Instant::now();
-    scene.draw_scene();
+    scene.draw_scene(rt);
     let elapsed = now.elapsed();
     println!("It took: {:.2?} to draw the scene", elapsed);
 
