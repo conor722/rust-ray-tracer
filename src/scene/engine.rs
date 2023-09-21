@@ -192,10 +192,23 @@ impl Scene {
     pub fn draw_scene(&mut self) {
         for x in -(self.canvas.width as i32) / 2..(self.canvas.width as i32) / 2 {
             for y in -(self.canvas.height as i32) / 2..(self.canvas.height as i32) / 2 {
-                let direction = self.canvas_to_viewport(x as f64, y as f64);
-                let color = self.trace_ray_for_triangles(self.origin, direction);
+                let direction1 = self.canvas_to_viewport(x as f64, y as f64);
+                let color1 = self.trace_ray_for_triangles(self.origin, direction1);
 
-                self.canvas.put_pixel(x, y, color.into());
+                let direction2 = self.canvas_to_viewport(x as f64 + 0.5, y as f64);
+                let color2 = self.trace_ray_for_triangles(self.origin, direction2);
+
+                let direction3 = self.canvas_to_viewport(x as f64, y as f64 + 0.5);
+                let color3 = self.trace_ray_for_triangles(self.origin, direction3);
+
+                let direction4 = self.canvas_to_viewport(x as f64 + 0.5, y as f64 + 0.5);
+                let color4 = self.trace_ray_for_triangles(self.origin, direction4);
+
+                self.canvas.put_pixel(
+                    x,
+                    y,
+                    Color::mix(&vec![color1, color2, color3, color4]).into(),
+                );
 
                 // println!("finished drawing ray at {x}, {y}");
             }

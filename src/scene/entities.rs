@@ -35,6 +35,30 @@ impl Into<u32> for Color {
     }
 }
 
+impl Color {
+    pub fn mix(colors: &Vec<Color>) -> Color {
+        let mut r = 0;
+        let mut g = 0;
+        let mut b = 0;
+
+        for col in colors.iter() {
+            r += col.r as u64;
+            g += col.g as u64;
+            b += col.b as u64;
+        }
+
+        r /= colors.len() as u64;
+        g /= colors.len() as u64;
+        b /= colors.len() as u64;
+
+        Color {
+            r: r as u8,
+            g: g as u8,
+            b: b as u8,
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Triangle {
     pub v1: Vector3d,
