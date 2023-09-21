@@ -38,7 +38,10 @@ Run the program with `cargo run <file>`.
 
 ## Misc
 
-The algorithm is pretty slow even after using an Octree to hold all the geometry to perform triangle intersections with, but its still faster than without. Could do with a lot more features like reflections, soft shadows, reading .mtl files to have more complex materials, and probably parallelisation to go faster. The Octree definitely needs to be optimised to be able to deal with more complex models.
+After parallelising the main loop, the image in this readme renders in about 2 seconds in release mode on an 8 core AMD CPU. 
+
+I'm planning to implement more of the .obj file spec including materials in linked .mtl files, and to implement the associated
+material/lighting effects.
 
 ## Credit
 
