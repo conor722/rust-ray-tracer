@@ -98,13 +98,22 @@ impl Ray {
         octree: &'a Octree,
         octant_index: usize,
     ) -> Option<RayTriangleIntersectionResult<'a>> {
+        return self.intersect_with_octant_with_max_t(octree, octant_index, f64::INFINITY);
+    }
+
+    pub fn intersect_with_octant_with_max_t<'a>(
+        &self,
+        octree: &'a Octree,
+        octant_index: usize,
+        max_t: f64,
+    ) -> Option<RayTriangleIntersectionResult<'a>> {
         if *octree.octant_triangle_count_map.get(&octant_index).unwrap() == 0 {
             return None;
         }
 
         let triangles_at_octant = octree.octant_triangle_map.get(&octant_index).unwrap();
         let mut intersected_triangle_in_octant: Option<RayTriangleIntersectionResult> = None;
-        let mut closest_triangle_in_octant_distance = f64::INFINITY;
+        let mut closest_triangle_in_octant_distance = max_t;
 
         for triangle_index in triangles_at_octant {
             let this_triangle = octree.triangles.get(*triangle_index).unwrap();

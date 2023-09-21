@@ -30,11 +30,19 @@ fn main() {
     let lights = vec![
         Light::Ambient { intensity: 0.4 },
         Light::Point {
-            intensity: 0.7,
+            intensity: 0.2,
             position: Vector3d {
-                x: 2.0,
-                y: 2.0,
-                z: 0.0,
+                x: -7.0,
+                y: 22.0,
+                z: -5.0,
+            },
+        },
+        Light::Point {
+            intensity: 0.5,
+            position: Vector3d {
+                x: 0.0,
+                y: 26.0,
+                z: -4.0,
             },
         },
         Light::Directional {

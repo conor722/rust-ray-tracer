@@ -10,6 +10,10 @@ static WHITE: Color = Color {
     b: 255,
 };
 
+/// A tiny delta to shift the origin point by when checking for triangles in between two points.
+/// so we don't just return the value at the original point.
+static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.001;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3d {
     pub x: f64,
@@ -255,6 +259,27 @@ impl Scene {
         }
     }
 
+    fn triangle_exists_between_points(&self, origin: &Vector3d, target: &Vector3d) -> bool {
+        let direction = *target - *origin;
+        let new_origin =
+            *origin + (direction * ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS);
+
+        let ray = Ray {
+            origin: new_origin,
+            direction: direction,
+        };
+
+        let max_t = direction.length();
+
+        let tri = ray.intersect_with_octant_with_max_t(&self.scene_data.octree, 0, max_t);
+
+        if let None = tri {
+            return true;
+        }
+
+        return false;
+    }
+
     /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
     fn compute_lighting_intensity(
         &self,
@@ -286,6 +311,12 @@ impl Scene {
                     intensity,
                     position,
                 } => {
+                    let light_hits_point = self.triangle_exists_between_points(point, position);
+
+                    if !light_hits_point {
+                        break;
+                    }
+
                     let l = *position - *point;
                     let n_dot_l = normal.dot(&l);
 
