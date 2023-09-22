@@ -1,6 +1,6 @@
-use std::ops::Mul;
+use std::{ops::Mul, sync::Arc};
 
-use super::engine::Vector3d;
+use super::{engine::Vector3d, material::Material};
 
 pub enum Light {
     Ambient { intensity: f64 },
@@ -72,7 +72,7 @@ pub struct Triangle {
     pub v3_normal_coords: Vector3d,
     pub color: Color,
     pub specular: f64,
-    pub texture_index: usize,
+    pub material: Arc<Material>,
 }
 
 #[derive(Debug, PartialEq)]

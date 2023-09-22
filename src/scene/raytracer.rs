@@ -1,8 +1,9 @@
-use crate::{collision::ray::Ray, file_management::utils::SceneData};
+use crate::collision::ray::Ray;
 
 use super::{
     engine::Vector3d,
     entities::{Color, Light},
+    scenedata::SceneData,
 };
 
 static WHITE: Color = Color {
@@ -30,7 +31,7 @@ impl RayTracer {
         if let Some(intersection) = triangle_intersection {
             let p = origin + direction * intersection.t;
 
-            let tex = &self.scene_data.textures[intersection.triangle.texture_index];
+            let tex = &intersection.triangle.material.texture;
 
             let w = 1.0 - intersection.u - intersection.v;
 

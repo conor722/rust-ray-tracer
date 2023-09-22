@@ -27,7 +27,7 @@ fn main() {
 
     let file = fs::read_to_string(file_name).expect("Could not read file");
 
-    let scene_data = file_management::utils::parse_lines(file.lines());
+    let scene_data = file_management::utils::parse_obj_file_lines(file.lines());
 
     let lights = vec![
         Light::Ambient { intensity: 0.4 },
