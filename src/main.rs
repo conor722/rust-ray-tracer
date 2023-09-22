@@ -9,7 +9,7 @@ use minifb::Key;
 use scene::engine::{Scene, Vector3d};
 use scene::entities::Light;
 
-use crate::scene::engine::RayTracer;
+use crate::scene::raytracer::RayTracer;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
