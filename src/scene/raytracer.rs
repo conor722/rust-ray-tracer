@@ -15,7 +15,7 @@ static WHITE: Color = Color {
 
 /// A tiny delta to shift the origin point by when checking for triangles in between two points.
 /// so we don't just return the value at the original point.
-static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.0001;
+static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.000001;
 
 pub struct RayTracer {
     pub scene_data: SceneData,
@@ -90,7 +90,8 @@ impl RayTracer {
         return false;
     }
 
-    /// Given all the lights in the scene, calculate a light intensity coefficient for the point P with the normal N.
+    /// Given all the lights in the scene, calculate a vector of intensities
+    /// for an r, g, b colour value.
     fn compute_lighting_intensity(
         &self,
         point: &Vector3d,

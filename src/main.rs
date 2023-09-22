@@ -40,7 +40,7 @@ fn main() {
             },
         },
         Light::Point {
-            intensity: 0.5,
+            intensity: 0.2,
             position: Vector3d {
                 x: 0.0,
                 y: 26.0,
@@ -48,7 +48,7 @@ fn main() {
             },
         },
         Light::Directional {
-            intensity: 0.5,
+            intensity: 0.2,
             direction: Vector3d {
                 x: -5.0,
                 y: 0.0,
