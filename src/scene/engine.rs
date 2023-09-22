@@ -203,28 +203,28 @@ impl Scene {
 
                     // We are going to split the (x, y) pair into corners and render a ray for each corner,
                     // this makes the end render result look less jagged (a form of anti aliasing)
-                    let color1 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction1);
+                    let color1 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction1);
 
                     let direction2 = Vector3d {
                         x: (x as f64 + 0.5) * x_scale,
                         y: y as f64 * y_scale,
                         z: z_value,
                     };
-                    let color2 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction2);
+                    let color2 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction2);
 
                     let direction3 = Vector3d {
                         x: x as f64 * x_scale,
                         y: (y as f64 + 0.5) * y_scale,
                         z: z_value,
                     };
-                    let color3 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction3);
+                    let color3 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction3);
 
                     let direction4 = Vector3d {
                         x: (x as f64 + 0.5) * x_scale,
                         y: (y as f64 + 0.5) * y_scale,
                         z: z_value,
                     };
-                    let color4 = rt_arc_c.trace_ray_for_triangles(rt_arc_c.origin, direction4);
+                    let color4 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction4);
 
                     let final_color = Color::mix(&vec![color1, color2, color3, color4]);
 

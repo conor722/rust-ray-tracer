@@ -22,7 +22,7 @@ pub struct RayTracer {
 }
 
 impl RayTracer {
-    pub fn trace_ray_for_triangles(&self, origin: Vector3d, direction: Vector3d) -> Color {
+    pub fn get_ray_colour(&self, origin: Vector3d, direction: Vector3d) -> Color {
         let ray = Ray { origin, direction };
 
         let triangle_intersection = ray.intersect_with_octant(&self.scene_data.octree, 0);
