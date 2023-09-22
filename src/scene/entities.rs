@@ -70,8 +70,6 @@ pub struct Triangle {
     pub v1_normal_coords: Vector3d,
     pub v2_normal_coords: Vector3d,
     pub v3_normal_coords: Vector3d,
-    pub color: Color,
-    pub specular: f64,
     pub material: Arc<Material>,
 }
 

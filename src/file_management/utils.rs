@@ -255,8 +255,6 @@ fn get_triangle<'a>(
     let (v3_index, v3_tex_coord_index, v3_normal_coord_index) =
         get_vertex_attributes(&v3_attribute_string);
 
-    let specular: f64 = 240.0;
-
     let v1 = scene_data
         .vertices
         .get(v1_index - 1)
@@ -326,8 +324,6 @@ fn get_triangle<'a>(
         v1_normal_coords: *v1_normal_coords,
         v2_normal_coords: *v2_normal_coords,
         v3_normal_coords: *v3_normal_coords,
-        color: Color { r: 0, g: 255, b: 0 },
-        specular,
         material: Arc::clone(&material),
     }
 }

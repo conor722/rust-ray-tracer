@@ -1,7 +1,7 @@
 use super::{entities::Color, raytracer::RayTracer};
 use minifb::{Window, WindowOptions};
 use std::{
-    ops::{Add, Div, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Div, Mul, Neg, Sub},
     sync::{mpsc, Arc},
     thread::available_parallelism,
 };
@@ -23,6 +23,14 @@ impl Add for Vector3d {
             y: self.y + other.y,
             z: self.z + other.z,
         }
+    }
+}
+
+impl AddAssign for Vector3d {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
     }
 }
 

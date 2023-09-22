@@ -3,6 +3,7 @@ use crate::collision::ray::Ray;
 use super::{
     engine::Vector3d,
     entities::{Color, Light},
+    material::Material,
     scenedata::SceneData,
 };
 
@@ -51,13 +52,18 @@ impl RayTracer {
                 + intersection.triangle.v3_normal_coords * intersection.v
                 + intersection.triangle.v1_normal_coords * w;
 
-            return col
-                * self.compute_lighting_intensity(
-                    &p,
-                    &n,
-                    &-direction,
-                    intersection.triangle.specular,
-                );
+            let lighting_intensity = self.compute_lighting_intensity(
+                &p,
+                &n,
+                &-direction,
+                &intersection.triangle.material,
+            );
+
+            return Color {
+                r: (col.r as f64 * lighting_intensity.x) as u8,
+                g: (col.g as f64 * lighting_intensity.y) as u8,
+                b: (col.b as f64 * lighting_intensity.z) as u8,
+            };
         } else {
             return WHITE; // nothing, void
         }
@@ -90,14 +96,18 @@ impl RayTracer {
         point: &Vector3d,
         normal: &Vector3d,
         v: &Vector3d,
-        specular: f64,
-    ) -> f64 {
-        let mut i: f64 = 0.0;
+        material: &Material,
+    ) -> Vector3d {
+        let mut i = Vector3d {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        };
 
         for light in &self.lights {
             match light {
                 Light::Ambient { intensity } => {
-                    i += *intensity;
+                    i += material.ambient_color_coefficient * *intensity;
                 }
                 Light::Directional {
                     intensity,
@@ -105,10 +115,16 @@ impl RayTracer {
                 } => {
                     let n_dot_l = normal.dot(direction);
 
-                    i += self
-                        .compute_diffuse_lighting_intensity(*intensity, n_dot_l, normal, direction);
+                    i += self.compute_diffuse_lighting_intensity(
+                        *intensity, n_dot_l, normal, direction, material,
+                    );
                     i += self.compute_specular_lighting_intensity(
-                        specular, *intensity, normal, v, direction,
+                        material.specular_weight,
+                        *intensity,
+                        normal,
+                        v,
+                        direction,
+                        material,
                     );
                 }
                 Light::Point {
@@ -124,9 +140,17 @@ impl RayTracer {
                     let l = *position - *point;
                     let n_dot_l = normal.dot(&l);
 
-                    i += self.compute_diffuse_lighting_intensity(*intensity, n_dot_l, normal, &l);
-                    i += self
-                        .compute_specular_lighting_intensity(specular, *intensity, normal, v, &l);
+                    i += self.compute_diffuse_lighting_intensity(
+                        *intensity, n_dot_l, normal, &l, material,
+                    );
+                    i += self.compute_specular_lighting_intensity(
+                        material.specular_weight,
+                        *intensity,
+                        normal,
+                        v,
+                        &l,
+                        material,
+                    );
                 }
             }
         }
@@ -140,12 +164,17 @@ impl RayTracer {
         n_dot_l: f64,
         normal: &Vector3d,
         l: &Vector3d,
-    ) -> f64 {
+        material: &Material,
+    ) -> Vector3d {
         if n_dot_l <= 0.0 {
-            return 0.0;
+            return Vector3d {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            };
         }
 
-        intensity * n_dot_l / (normal.length() * l.length())
+        material.diffuse_color_coefficient * intensity * n_dot_l / (normal.length() * l.length())
     }
 
     fn compute_specular_lighting_intensity(
@@ -155,16 +184,23 @@ impl RayTracer {
         normal: &Vector3d,
         v: &Vector3d,
         l: &Vector3d,
-    ) -> f64 {
+        material: &Material,
+    ) -> Vector3d {
         if s != -1.0 {
             let r = (*normal * 2.0) * normal.dot(&l) - *l;
             let r_dot_v = r.dot(&v);
 
             if r_dot_v > 0.0 {
-                return intensity * (r_dot_v / (r.length() * v.length())).powf(s);
+                return material.specular_color_coefficient
+                    * intensity
+                    * (r_dot_v / (r.length() * v.length())).powf(s);
             }
         }
 
-        0.0
+        Vector3d {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
     }
 }
