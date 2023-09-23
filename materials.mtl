@@ -6,6 +6,14 @@ Ks 1.000000 1.000000 1.000000
 map_Ka metal.jpg
 bump metal_normal.jpg
 
+newmtl teacup
+Ns 240.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+map_Ka dark_metal.jpg
+bump dark_metal_normal.jpg
+
 newmtl table
 Ns 240.000000
 Ka 1.000000 1.000000 1.000000

@@ -4,7 +4,7 @@ This is a very simple ray-tracer that uses the Möller–Trumbore intersection a
 
 It uses the minifb library to create a window and draw to it and take keyboard input.
 
-Heres an example render of the famous Utah Teapot, which is contained in the model file in the main directory and can be viewed by typing `cargo run model2.obj` in the main project directory and waiting several minutes.
+Heres an example render of the famous Utah Teapot, which is contained in the model file in the main directory and can be viewed by typing `cargo run model2.obj` in the main project directory and waiting several seconds.
 
 ![Utah Teapot render](example_output.png "The Utah Teapot as rendered by this application")
 
