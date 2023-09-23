@@ -98,6 +98,10 @@ impl Vector3d {
             z: self.x * other.y - self.y * other.x,
         }
     }
+
+    pub fn normalised(&self) -> Self {
+        return self.clone() / self.length();
+    }
 }
 
 struct Viewport {

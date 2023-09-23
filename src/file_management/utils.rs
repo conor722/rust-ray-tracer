@@ -161,8 +161,6 @@ pub fn parse_obj_file_lines<'a>(lines: Lines) -> SceneData {
                 let material_name: String =
                     parse_next_value_from_split(&mut split_line).expect("Invalid material name");
 
-                println!("mat={material_name}");
-
                 let m = scene_data
                     .material_map
                     .materials

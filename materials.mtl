@@ -1,13 +1,15 @@
 newmtl teapot
-Ns 320.000000
+Ns 240.000000
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 1.000000 1.000000
 Ks 1.000000 1.000000 1.000000
 map_Ka map_test.png
+bump metal_normal.jpg
 
 newmtl table
-Ns 200.000000
+Ns 240.000000
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 1.000000 1.000000
 Ks 1.000000 1.000000 1.000000
 map_Ka wood.jpg
+bump wood_normal.jpg

@@ -1,4 +1,4 @@
-use crate::collision::ray::Ray;
+use crate::collision::ray::{Ray, RayTriangleIntersectionResult};
 
 use super::{
     engine::Vector3d,
@@ -15,7 +15,7 @@ static WHITE: Color = Color {
 
 /// A tiny delta to shift the origin point by when checking for triangles in between two points.
 /// so we don't just return the value at the original point.
-static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.000001;
+static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.0001;
 
 pub struct RayTracer {
     pub scene_data: SceneData,
@@ -48,9 +48,7 @@ impl RayTracer {
 
             let col = tex.colours[tex.width * tex_y_index + tex_x_index];
 
-            let n = intersection.triangle.v2_normal_coords * intersection.u
-                + intersection.triangle.v3_normal_coords * intersection.v
-                + intersection.triangle.v1_normal_coords * w;
+            let n = self.get_normal_at_intersection(&intersection, tex_x_index, tex_y_index);
 
             let lighting_intensity = self.compute_lighting_intensity(
                 &p,
@@ -67,6 +65,56 @@ impl RayTracer {
         } else {
             return WHITE; // nothing, void
         }
+    }
+
+    pub fn get_normal_at_intersection(
+        &self,
+        intersection: &RayTriangleIntersectionResult,
+        tex_x_index: usize,
+        tex_y_index: usize,
+    ) -> Vector3d {
+        let w = 1.0 - intersection.u - intersection.v;
+
+        let mut n = intersection.triangle.v2_normal_coords * intersection.u
+            + intersection.triangle.v3_normal_coords * intersection.v
+            + intersection.triangle.v1_normal_coords * w;
+
+        if let Some(bump_map) = &intersection.triangle.material.bump_map {
+            let mut bump_vector: Vector3d =
+                bump_map.colours[bump_map.width * tex_y_index + tex_x_index].into();
+            bump_vector = bump_vector.normalised();
+            bump_vector = (bump_vector * 2.0)
+                - Vector3d {
+                    x: 1.0,
+                    y: 1.0,
+                    z: 1.0,
+                };
+
+            let mut t = n.cross(&Vector3d {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0,
+            });
+
+            if t.length() == 0.0 {
+                t = n.cross(&Vector3d {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 1.0,
+                });
+            }
+
+            t = t.normalised();
+            let b = n.cross(&t).normalised();
+
+            n = Vector3d {
+                x: bump_vector.dot(&t),
+                y: bump_vector.dot(&b),
+                z: bump_vector.dot(&n),
+            };
+        }
+
+        return n.normalised();
     }
 
     fn triangle_exists_between_points(&self, origin: &Vector3d, target: &Vector3d) -> bool {

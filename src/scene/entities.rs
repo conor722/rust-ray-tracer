@@ -35,6 +35,16 @@ impl Into<u32> for Color {
     }
 }
 
+impl Into<Vector3d> for Color {
+    fn into(self) -> Vector3d {
+        Vector3d {
+            x: self.r as f64,
+            y: self.g as f64,
+            z: self.b as f64,
+        }
+    }
+}
+
 impl Color {
     pub fn mix(colors: &Vec<Color>) -> Color {
         let mut r = 0;

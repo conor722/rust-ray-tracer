@@ -30,9 +30,9 @@ fn main() {
     let scene_data = file_management::utils::parse_obj_file_lines(file.lines());
 
     let lights = vec![
-        Light::Ambient { intensity: 0.4 },
+        Light::Ambient { intensity: 0.3 },
         Light::Point {
-            intensity: 0.2,
+            intensity: 0.1,
             position: Vector3d {
                 x: -7.0,
                 y: 22.0,
@@ -62,7 +62,7 @@ fn main() {
         origin: Vector3d {
             x: 0.0,
             y: 0.0,
-            z: -60.0,
+            z: -40.0,
         },
     };
     let mut scene = Scene::new(WIDTH, HEIGHT);
