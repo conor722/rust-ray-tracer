@@ -3,7 +3,7 @@ Ns 240.000000
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 1.000000 1.000000
 Ks 1.000000 1.000000 1.000000
-map_Ka map_test.png
+map_Ka metal.jpg
 bump metal_normal.jpg
 
 newmtl table

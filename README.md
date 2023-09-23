@@ -4,7 +4,7 @@ This is a very simple ray-tracer that uses the Möller–Trumbore intersection a
 
 It uses the minifb library to create a window and draw to it and take keyboard input.
 
-Heres an example render of the famous Utah Teapot, which is contained in the model file in the main directory and can be viewed by typing `cargo run model` in the main project directory and waiting several minutes.
+Heres an example render of the famous Utah Teapot, which is contained in the model file in the main directory and can be viewed by typing `cargo run model2.obj` in the main project directory and waiting several minutes.
 
 ![Utah Teapot render](example_output.png "The Utah Teapot as rendered by this application")
 
@@ -38,10 +38,13 @@ Run the program with `cargo run <file>`.
 
 ## Misc
 
-After parallelising the main loop, the image in this readme renders in about 2 seconds in release mode on an 8 core AMD CPU. 
+After parallelising the main loop, the image in this readme renders in about 6 seconds in release mode on an 8 core AMD CPU. 
 
-I'm planning to implement more of the .obj file spec including materials in linked .mtl files, and to implement the associated
-material/lighting effects.
+High poly counts are handled by putting all the triangles into tree structure called an 'octree', the ray is recursively
+intersected with the sub-trees of the octree to find which triangles to test for intersection, this dramatically decreases rendering speed.
+
+Enough of the .obj and .mtl spec is implemented to generate an interesting image, most triangulated .obj and .mtl file combinations should
+work, just some attributes won't have any visible effect. Models using quads will crash as quads aren't handled by the raytracer.
 
 ## Credit
 

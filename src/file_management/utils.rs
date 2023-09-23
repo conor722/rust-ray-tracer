@@ -212,7 +212,7 @@ where
 fn get_vertex(mut line: &mut SplitWhitespace<'_>) -> Vector3d {
     let x: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
     let y: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
-    let z: f64 = parse_next_value_from_split(&mut line).expect("Cannot parse vertex");
+    let z: f64 = parse_next_value_from_split(&mut line).unwrap_or(0.0);
 
     return Vector3d { x, y, z };
 }
