@@ -80,5 +80,7 @@ fn main() {
 
     println!("draw finished");
 
-    while scene.canvas.window.is_open() && !scene.canvas.window.is_key_down(Key::Escape) {}
+    while scene.canvas.window.is_open() && !scene.canvas.window.is_key_down(Key::Escape) {
+        scene.canvas.window.update();
+    }
 }
