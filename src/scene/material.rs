@@ -18,6 +18,7 @@ pub struct Material {
     pub specular_weight: f64,                 // Ns
     pub texture: Arc<Texture>, // map_Kd, will also be used for map Ka and Ks for the time being
     pub bump_map: Option<Arc<Texture>>, // map_bump not part of mtl standard but is used unofficially, apparently mtl predates bump/normal maps
+    pub reflectivity: f64,              // 0.0 = no reflection, 1.0 = perfect mirror
 }
 
 #[derive(Debug, PartialEq)]

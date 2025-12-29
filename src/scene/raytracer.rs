@@ -13,9 +13,11 @@ static WHITE: Color = Color {
     b: 255,
 };
 
-/// A tiny delta to shift the origin point by when checking for triangles in between two points.
-/// so we don't just return the value at the original point.
-static ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS: f64 = 0.0001;
+/// Small offset to prevent self-intersection when tracing secondary rays (shadows, reflections)
+static SURFACE_OFFSET: f64 = 0.0001;
+
+/// Maximum recursion depth for reflections to prevent infinite loops
+static MAX_REFLECTION_DEPTH: u32 = 5;
 
 pub struct RayTracer {
     pub scene_data: SceneData,
@@ -25,6 +27,10 @@ pub struct RayTracer {
 
 impl RayTracer {
     pub fn get_ray_colour(&self, origin: Vector3d, direction: Vector3d) -> Color {
+        self.get_ray_colour_recursive(origin, direction, 0)
+    }
+
+    fn get_ray_colour_recursive(&self, origin: Vector3d, direction: Vector3d, depth: u32) -> Color {
         let ray = Ray { origin, direction };
 
         let triangle_intersection = ray.intersect_with_octant(&self.scene_data.octree, 0);
@@ -57,10 +63,48 @@ impl RayTracer {
                 &intersection.triangle.material,
             );
 
+            // Calculate the local (non-reflected) color
+            let local_color = Vector3d {
+                x: col.r as f64 * lighting_intensity.x,
+                y: col.g as f64 * lighting_intensity.y,
+                z: col.b as f64 * lighting_intensity.z,
+            };
+
+            let reflectivity = intersection.triangle.material.reflectivity;
+
+            // If the material is reflective and we haven't exceeded max depth
+            if reflectivity > 0.0 && depth < MAX_REFLECTION_DEPTH {
+                // Calculate reflection direction: R = D - 2(D·N)N
+                let d_dot_n = direction.dot(&n);
+                let reflect_dir = (direction - n * 2.0 * d_dot_n).normalised();
+
+                // Offset the origin slightly to avoid self-intersection
+                let reflect_origin = p + n * SURFACE_OFFSET;
+
+                // Recursively trace the reflected ray
+                let reflected_color =
+                    self.get_ray_colour_recursive(reflect_origin, reflect_dir, depth + 1);
+
+                // Blend local color with reflected color based on reflectivity
+                let reflected_vec = Vector3d {
+                    x: reflected_color.r as f64,
+                    y: reflected_color.g as f64,
+                    z: reflected_color.b as f64,
+                };
+
+                let final_color = local_color * (1.0 - reflectivity) + reflected_vec * reflectivity;
+
+                return Color {
+                    r: final_color.x.clamp(0.0, 255.0) as u8,
+                    g: final_color.y.clamp(0.0, 255.0) as u8,
+                    b: final_color.z.clamp(0.0, 255.0) as u8,
+                };
+            }
+
             return Color {
-                r: (col.r as f64 * lighting_intensity.x) as u8,
-                g: (col.g as f64 * lighting_intensity.y) as u8,
-                b: (col.b as f64 * lighting_intensity.z) as u8,
+                r: local_color.x.clamp(0.0, 255.0) as u8,
+                g: local_color.y.clamp(0.0, 255.0) as u8,
+                b: local_color.z.clamp(0.0, 255.0) as u8,
             };
         } else {
             return WHITE; // nothing, void
@@ -117,10 +161,15 @@ impl RayTracer {
         return n.normalised();
     }
 
-    fn triangle_exists_between_points(&self, origin: &Vector3d, target: &Vector3d) -> bool {
+    fn triangle_exists_between_points(
+        &self,
+        origin: &Vector3d,
+        normal: &Vector3d,
+        target: &Vector3d,
+    ) -> bool {
         let direction = *target - *origin;
-        let new_origin =
-            *origin + (direction * ORIGIN_SHIFT_AMOUNT_FOR_FINDING_TRIANGLES_BETWEEN_POINTS);
+        // Offset along the surface normal to avoid self-intersection
+        let new_origin = *origin + *normal * SURFACE_OFFSET;
 
         let ray = Ray {
             origin: new_origin,
@@ -180,7 +229,8 @@ impl RayTracer {
                     intensity,
                     position,
                 } => {
-                    let light_hits_point = self.triangle_exists_between_points(point, position);
+                    let light_hits_point =
+                        self.triangle_exists_between_points(point, normal, position);
 
                     if !light_hits_point {
                         break;

@@ -39,6 +39,7 @@ pub fn parse_mtl_file_lines<'a>(material_map: &mut MaterialMap, lines: Lines) {
     let mut specular_weight: Option<f64> = None;
     let mut texture: Option<Arc<Texture>> = None;
     let mut bump_map: Option<Arc<Texture>> = None;
+    let mut reflectivity: Option<f64> = None;
 
     // Add an END to the end of the iterator to make sure it adds the last material.
     for line in lines.chain(vec!["END"]) {
@@ -59,11 +60,21 @@ pub fn parse_mtl_file_lines<'a>(material_map: &mut MaterialMap, lines: Lines) {
                         specular_weight: specular_weight.unwrap_or(240.0),
                         texture: texture.clone().unwrap(),
                         bump_map: bump_map.clone(),
+                        reflectivity: reflectivity.unwrap_or(0.0),
                     };
 
                     material_map
                         .materials
                         .insert(actual_name.to_string(), Arc::new(mat));
+
+                    // Reset all material properties for the next material
+                    ambient_color_coefficient = None;
+                    diffuse_color_coefficient = None;
+                    specular_color_coefficient = None;
+                    specular_weight = None;
+                    texture = None;
+                    bump_map = None;
+                    reflectivity = None;
                 }
 
                 let next_name = parse_next_value_from_split::<String>(&mut split_line);
@@ -113,6 +124,11 @@ pub fn parse_mtl_file_lines<'a>(material_map: &mut MaterialMap, lines: Lines) {
                 let sw: f64 = parse_next_value_from_split(&mut split_line)
                     .expect("Expected a valid Ns float value");
                 specular_weight = Some(sw);
+            }
+            Some("Kr") => {
+                // Kr is used for reflectivity (0.0 to 1.0)
+                let kr: f64 = parse_next_value_from_split(&mut split_line).unwrap_or(0.0);
+                reflectivity = Some(kr.clamp(0.0, 1.0));
             }
             Some(&_) => {}
             None => {}
