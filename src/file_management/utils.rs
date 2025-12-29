@@ -10,7 +10,7 @@ use crate::scene::entities::{Color, Texture, Triangle};
 use crate::scene::material::{Material, MaterialMap};
 use crate::scene::scenedata::SceneData;
 
-use image::io::Reader as ImageReader;
+use image::ImageReader;
 
 static DEFAULT_VERTICES: &Vector3d = &Vector3d {
     x: 0.0,
