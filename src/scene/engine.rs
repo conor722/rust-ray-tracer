@@ -198,7 +198,6 @@ impl Scene {
         for chunk_start in (-(height / 2)..(height / 2)).step_by(chunk_size as usize) {
             let chunk_end = (chunk_start + chunk_size).min(height / 2);
 
-            // Process rows in parallel using rayon
             let rows: Vec<Vec<(i32, i32, Color)>> = (chunk_start..chunk_end)
                 .into_par_iter()
                 .map(|y| {
@@ -236,7 +235,7 @@ impl Scene {
                             };
                             let color4 = rt_ref.get_ray_colour(rt_ref.origin, direction4);
 
-                            let final_color = Color::mix(&vec![color1, color2, color3, color4]);
+                            let final_color = Color::mix(&[color1, color2, color3, color4]);
                             (x, y, final_color)
                         })
                         .collect()

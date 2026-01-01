@@ -1,34 +1,40 @@
-use std::{collections::HashMap, vec};
-
 use crate::scene::{engine::Vector3d, entities::Triangle};
 
 use super::aabb::Aabb;
 
+/// Represents a single octant node in the octree
+#[derive(Clone, Debug, PartialEq)]
+pub struct OctantNode {
+    pub aabb_index: usize,
+    pub triangles: Vec<usize>,
+    pub children: Vec<usize>,
+    pub triangle_count: usize,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Octree {
-    pub octant_aabb_map: HashMap<usize, usize>,
-    pub octant_triangle_map: HashMap<usize, Vec<usize>>,
-    pub octant_child_map: HashMap<usize, Vec<usize>>,
-    pub octant_triangle_count_map: HashMap<usize, usize>,
+    pub nodes: Vec<OctantNode>,
     pub aabbs: Vec<Aabb>,
     pub triangles: Vec<Triangle>,
-    pub triangle_aabb_map: HashMap<usize, usize>,
-    pub octant_count: usize,
+    pub triangle_aabbs: Vec<usize>,
 }
 
 impl Octree {
     pub fn new(min_x: f64, max_x: f64, min_y: f64, max_y: f64, min_z: f64, max_z: f64) -> Octree {
         let aabb = Aabb::new(min_x, max_x, min_y, max_y, min_z, max_z);
 
-        Octree {
-            aabbs: vec![aabb],
-            octant_aabb_map: HashMap::from([(0, 0)]),
-            octant_triangle_map: HashMap::from([(0, vec![])]),
-            octant_child_map: HashMap::from([(0, vec![])]),
-            octant_triangle_count_map: HashMap::from([(0, 0)]),
-            triangle_aabb_map: HashMap::new(),
+        let root_node = OctantNode {
+            aabb_index: 0,
             triangles: vec![],
-            octant_count: 1,
+            children: vec![],
+            triangle_count: 0,
+        };
+
+        Octree {
+            nodes: vec![root_node],
+            aabbs: vec![aabb],
+            triangles: vec![],
+            triangle_aabbs: vec![],
         }
     }
 
@@ -40,8 +46,7 @@ impl Octree {
 
         self.triangles.push(triangle);
         self.aabbs.push(triangle_aabb);
-
-        self.triangle_aabb_map.insert(triangle_index, aabb_index);
+        self.triangle_aabbs.push(aabb_index);
 
         self.push_at_octant(triangle_index, aabb_index, 0);
     }
@@ -53,64 +58,49 @@ impl Octree {
         let children: Vec<usize>;
 
         {
-            let aabb = self.aabbs.get(aabb_index).unwrap();
-            let octant_aabb_index = self.octant_aabb_map.get(&octant_index).unwrap();
-            let octant_aabb = self.aabbs.get(*octant_aabb_index).unwrap();
+            let aabb = &self.aabbs[aabb_index];
+            let node = &self.nodes[octant_index];
+            let octant_aabb = &self.aabbs[node.aabb_index];
 
             intersects = aabb.intersects(octant_aabb);
-            current_octant_has_triangle =
-                self.octant_triangle_map.get(&octant_index).unwrap().len() > 0;
-            children = self.octant_child_map.get(&octant_index).unwrap().clone();
-            is_leaf_octant = children.len() == 0;
+            current_octant_has_triangle = !node.triangles.is_empty();
+            children = node.children.clone();
+            is_leaf_octant = children.is_empty();
         }
 
         if !intersects {
             return;
         }
 
-        *self
-            .octant_triangle_count_map
-            .get_mut(&octant_index)
-            .unwrap() += 1;
+        self.nodes[octant_index].triangle_count += 1;
 
         if is_leaf_octant && !current_octant_has_triangle {
-            self.octant_triangle_map
-                .get_mut(&octant_index)
-                .unwrap()
-                .push(triangle_index);
+            self.nodes[octant_index].triangles.push(triangle_index);
         } else if is_leaf_octant {
             let child_indices = self.subdivide(octant_index);
 
-            let intersecting_child_indices: Vec<&usize> = child_indices
+            let intersecting_child_indices: Vec<usize> = child_indices
                 .iter()
                 .filter(|ci| self.octant_intersects_with_triangle_aabb(**ci, aabb_index))
+                .copied()
                 .collect();
 
             if intersecting_child_indices.len() == 1 {
-                for ci in &intersecting_child_indices {
-                    self.push_at_octant(triangle_index, aabb_index, **ci);
-                }
+                self.push_at_octant(triangle_index, aabb_index, intersecting_child_indices[0]);
             } else {
-                self.octant_triangle_map
-                    .get_mut(&octant_index)
-                    .unwrap()
-                    .push(triangle_index);
+                self.nodes[octant_index].triangles.push(triangle_index);
             }
         } else if intersects && !is_leaf_octant {
-            let intersecting_child_indices: Vec<&usize> = children
+            let intersecting_child_indices: Vec<usize> = children
                 .iter()
                 .filter(|ci| self.octant_intersects_with_triangle_aabb(**ci, aabb_index))
+                .copied()
                 .collect();
 
             if intersecting_child_indices.len() == 1 {
-                for ci in &intersecting_child_indices {
-                    self.push_at_octant(triangle_index, aabb_index, **ci);
-                }
+                self.push_at_octant(triangle_index, aabb_index, intersecting_child_indices[0]);
             } else {
-                self.octant_triangle_map
-                    .get_mut(&octant_index)
-                    .unwrap()
-                    .push(triangle_index);
+                self.nodes[octant_index].triangles.push(triangle_index);
             }
         } else {
             unreachable!()
@@ -122,22 +112,14 @@ impl Octree {
         octant_index: usize,
         triangle_aabb_index: usize,
     ) -> bool {
-        let octant_aabb = self
-            .aabbs
-            .get(*self.octant_aabb_map.get(&octant_index).unwrap())
-            .unwrap();
-        let triangle_aabb = self.aabbs.get(triangle_aabb_index).unwrap();
+        let octant_aabb = &self.aabbs[self.nodes[octant_index].aabb_index];
+        let triangle_aabb = &self.aabbs[triangle_aabb_index];
 
-        return octant_aabb.intersects(&triangle_aabb);
+        octant_aabb.intersects(triangle_aabb)
     }
 
     fn subdivide(&mut self, octant_index: usize) -> Vec<usize> {
-        let octant_aabb: Aabb;
-
-        {
-            let aabb_index = self.octant_aabb_map.get(&octant_index).unwrap();
-            octant_aabb = self.aabbs.get(*aabb_index).unwrap().clone();
-        }
+        let octant_aabb = self.aabbs[self.nodes[octant_index].aabb_index].clone();
 
         let Vector3d {
             x: x_min,
@@ -194,7 +176,7 @@ impl Octree {
         let top_back_left = Aabb::new(
             x_min,
             x_min + half_x_distance,
-            y_min + half_z_distance,
+            y_min + half_y_distance,
             y_max,
             z_min,
             z_min + half_z_distance,
@@ -203,7 +185,7 @@ impl Octree {
         let top_front_left = Aabb::new(
             x_min,
             x_min + half_x_distance,
-            y_min + half_z_distance,
+            y_min + half_y_distance,
             y_max,
             z_min + half_z_distance,
             z_max,
@@ -212,7 +194,7 @@ impl Octree {
         let top_front_right = Aabb::new(
             x_min + half_x_distance,
             x_max,
-            y_min + half_z_distance,
+            y_min + half_y_distance,
             y_max,
             z_min + half_z_distance,
             z_max,
@@ -221,7 +203,7 @@ impl Octree {
         let top_back_right = Aabb::new(
             x_min + half_x_distance,
             x_max,
-            y_min + half_z_distance,
+            y_min + half_y_distance,
             y_max,
             z_min,
             z_min + half_z_distance,
@@ -229,7 +211,7 @@ impl Octree {
 
         let mut child_indices = vec![];
 
-        self.octant_child_map.insert(octant_index, vec![]);
+        self.nodes[octant_index].children = vec![];
 
         for abb in [
             bottom_back_left,
@@ -241,18 +223,18 @@ impl Octree {
             top_front_right,
             top_back_right,
         ] {
+            let new_node_index = self.nodes.len();
+            let new_aabb_index = self.aabbs.len();
+
             self.aabbs.push(abb);
-            self.octant_aabb_map
-                .insert(self.octant_count, self.aabbs.len() - 1);
-            self.octant_child_map
-                .get_mut(&octant_index)
-                .unwrap()
-                .push(self.octant_count);
-            self.octant_triangle_map.insert(self.octant_count, vec![]);
-            self.octant_child_map.insert(self.octant_count, vec![]);
-            self.octant_triangle_count_map.insert(self.octant_count, 0);
-            child_indices.push(self.octant_count);
-            self.octant_count += 1;
+            self.nodes.push(OctantNode {
+                aabb_index: new_aabb_index,
+                triangles: vec![],
+                children: vec![],
+                triangle_count: 0,
+            });
+            self.nodes[octant_index].children.push(new_node_index);
+            child_indices.push(new_node_index);
         }
 
         child_indices

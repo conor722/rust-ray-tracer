@@ -46,7 +46,7 @@ impl Into<Vector3d> for Color {
 }
 
 impl Color {
-    pub fn mix(colors: &Vec<Color>) -> Color {
+    pub fn mix(colors: &[Color]) -> Color {
         let mut r = 0;
         let mut g = 0;
         let mut b = 0;

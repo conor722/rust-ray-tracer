@@ -98,7 +98,7 @@ impl Ray {
         octree: &'a Octree,
         octant_index: usize,
     ) -> Option<RayTriangleIntersectionResult<'a>> {
-        return self.intersect_with_octant_with_max_t(octree, octant_index, f64::INFINITY);
+        self.intersect_with_octant_with_max_t(octree, octant_index, f64::INFINITY)
     }
 
     pub fn intersect_with_octant_with_max_t<'a>(
@@ -107,16 +107,17 @@ impl Ray {
         octant_index: usize,
         max_t: f64,
     ) -> Option<RayTriangleIntersectionResult<'a>> {
-        if *octree.octant_triangle_count_map.get(&octant_index).unwrap() == 0 {
+        let node = &octree.nodes[octant_index];
+
+        if node.triangle_count == 0 {
             return None;
         }
 
-        let triangles_at_octant = octree.octant_triangle_map.get(&octant_index).unwrap();
         let mut intersected_triangle_in_octant: Option<RayTriangleIntersectionResult> = None;
         let mut closest_triangle_in_octant_distance = max_t;
 
-        for triangle_index in triangles_at_octant {
-            let this_triangle = octree.triangles.get(*triangle_index).unwrap();
+        for &triangle_index in &node.triangles {
+            let this_triangle = &octree.triangles[triangle_index];
             let this_triangle_intersection = self.intersect_with_triangle(this_triangle);
 
             if let Some(tri) = this_triangle_intersection {
@@ -127,27 +128,29 @@ impl Ray {
             }
         }
 
-        let child_octants = octree.octant_child_map.get(&octant_index).unwrap();
+        // Use a small fixed-size array to avoid heap allocation (octrees have at most 8 children)
+        let mut child_octant_intersection_distances: [(f64, usize); 8] = [(0.0, 0); 8];
+        let mut num_children = 0;
 
-        let mut child_octant_intersection_distances = vec![];
-
-        for coi in child_octants {
-            let child_octant_aabb_index = octree.octant_aabb_map.get(&coi).unwrap();
-            let child_octant_aabb = octree.aabbs.get(*child_octant_aabb_index).unwrap();
+        for &coi in &node.children {
+            let child_node = &octree.nodes[coi];
+            let child_octant_aabb = &octree.aabbs[child_node.aabb_index];
             let child_octant_ray_intersection = self.intersect_aabb(child_octant_aabb);
 
             if let Some(coirs) = child_octant_ray_intersection {
-                child_octant_intersection_distances.push((coirs.t, coi));
+                child_octant_intersection_distances[num_children] = (coirs.t, coi);
+                num_children += 1;
             }
         }
+
+        let children_slice = &mut child_octant_intersection_distances[..num_children];
+        children_slice.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
         let mut intersected_triangle_in_child_octant: Option<RayTriangleIntersectionResult> = None;
         let mut intersected_triangle_in_child_octant_distance = f64::INFINITY;
 
-        child_octant_intersection_distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-
-        for (_, coi) in child_octant_intersection_distances {
-            let res = self.intersect_with_octant(octree, *coi);
+        for &(_, coi) in children_slice.iter() {
+            let res = self.intersect_with_octant(octree, coi);
 
             if let Some(rti) = res {
                 intersected_triangle_in_child_octant_distance = rti.t;
@@ -158,9 +161,9 @@ impl Ray {
         }
 
         if intersected_triangle_in_child_octant_distance < closest_triangle_in_octant_distance {
-            return intersected_triangle_in_child_octant;
+            intersected_triangle_in_child_octant
         } else {
-            return intersected_triangle_in_octant;
+            intersected_triangle_in_octant
         }
     }
 }

@@ -173,7 +173,7 @@ impl RayTracer {
 
         let ray = Ray {
             origin: new_origin,
-            direction: direction,
+            direction,
         };
 
         let max_t = direction.length();
