@@ -1,11 +1,10 @@
 use super::{entities::Color, raytracer::RayTracer};
 use minifb::{Window, WindowOptions};
+use rayon::prelude::*;
 use std::{
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
-    sync::{mpsc, Arc},
-    thread::available_parallelism,
+    sync::Arc,
 };
-use threadpool::ThreadPool;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3d {
@@ -186,11 +185,6 @@ impl Scene {
     /// You still need to update the canvas for it to show the changes.
     pub fn draw_scene(&mut self, rt: RayTracer) {
         let rt_arc = Arc::new(rt);
-        let ap = usize::from(available_parallelism().unwrap());
-
-        println!("Going to trace scene with {ap} threads");
-
-        let tp = ThreadPool::new(ap);
 
         let x_scale = self.viewport.width / self.canvas.width as f64;
         let y_scale = self.viewport.height / self.canvas.height as f64;
@@ -198,70 +192,66 @@ impl Scene {
         let height = self.canvas.height as i32;
         let width = self.canvas.width as i32;
 
-        let (tx, rx) = mpsc::channel();
+        // Process in chunks of rows for periodic updates
+        let chunk_size = 50i32;
 
-        for x in -(width as i32) / 2..(width as i32) / 2 {
-            for y in -(height as i32) / 2..(height as i32) / 2 {
-                let rt_arc_c = rt_arc.clone();
-                let tx_clone = tx.clone();
+        for chunk_start in (-(height / 2)..(height / 2)).step_by(chunk_size as usize) {
+            let chunk_end = (chunk_start + chunk_size).min(height / 2);
 
-                // Put the trace function for the ray at this point into a threadpool and go
-                tp.execute(move || {
-                    let direction1 = Vector3d {
-                        x: x as f64 * x_scale,
-                        y: y as f64 * y_scale,
-                        z: z_value,
-                    };
+            // Process rows in parallel using rayon
+            let rows: Vec<Vec<(i32, i32, Color)>> = (chunk_start..chunk_end)
+                .into_par_iter()
+                .map(|y| {
+                    let rt_ref = &rt_arc;
+                    (-(width / 2)..(width / 2))
+                        .map(|x| {
+                            let direction1 = Vector3d {
+                                x: x as f64 * x_scale,
+                                y: y as f64 * y_scale,
+                                z: z_value,
+                            };
 
-                    // We are going to split the (x, y) pair into corners and render a ray for each corner,
-                    // this makes the end render result look less jagged (a form of anti aliasing)
-                    let color1 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction1);
+                            // We are going to split the (x, y) pair into corners and render a ray for each corner,
+                            // this makes the end render result look less jagged (a form of anti aliasing)
+                            let color1 = rt_ref.get_ray_colour(rt_ref.origin, direction1);
 
-                    let direction2 = Vector3d {
-                        x: (x as f64 + 0.5) * x_scale,
-                        y: y as f64 * y_scale,
-                        z: z_value,
-                    };
-                    let color2 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction2);
+                            let direction2 = Vector3d {
+                                x: (x as f64 + 0.5) * x_scale,
+                                y: y as f64 * y_scale,
+                                z: z_value,
+                            };
+                            let color2 = rt_ref.get_ray_colour(rt_ref.origin, direction2);
 
-                    let direction3 = Vector3d {
-                        x: x as f64 * x_scale,
-                        y: (y as f64 + 0.5) * y_scale,
-                        z: z_value,
-                    };
-                    let color3 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction3);
+                            let direction3 = Vector3d {
+                                x: x as f64 * x_scale,
+                                y: (y as f64 + 0.5) * y_scale,
+                                z: z_value,
+                            };
+                            let color3 = rt_ref.get_ray_colour(rt_ref.origin, direction3);
 
-                    let direction4 = Vector3d {
-                        x: (x as f64 + 0.5) * x_scale,
-                        y: (y as f64 + 0.5) * y_scale,
-                        z: z_value,
-                    };
-                    let color4 = rt_arc_c.get_ray_colour(rt_arc_c.origin, direction4);
+                            let direction4 = Vector3d {
+                                x: (x as f64 + 0.5) * x_scale,
+                                y: (y as f64 + 0.5) * y_scale,
+                                z: z_value,
+                            };
+                            let color4 = rt_ref.get_ray_colour(rt_ref.origin, direction4);
 
-                    let final_color = Color::mix(&vec![color1, color2, color3, color4]);
-
-                    tx_clone.send((y, x, final_color)).unwrap();
+                            let final_color = Color::mix(&vec![color1, color2, color3, color4]);
+                            (x, y, final_color)
+                        })
+                        .collect()
                 })
+                .collect();
+
+            // Apply all pixels from this chunk to canvas
+            for row in rows {
+                for (x, y, col) in row {
+                    self.canvas.put_pixel(x, y, col.into());
+                }
             }
+
+            // Update display after each chunk for progressive rendering
+            self.canvas.update();
         }
-
-        // Need to drop so the receiver will eventually terminate.
-        drop(tx);
-
-        let mut ctr = 0;
-
-        for received in rx {
-            ctr += 1;
-            let (y, x, col) = received;
-            self.canvas.put_pixel(x, y, col.into());
-
-            // It looks cooler if we update the canvas during rendering, but
-            // it slows down the rendering a lot, so do it per 8000 pixels.
-            if ctr % 8000 == 0 {
-                self.canvas.update();
-            }
-        }
-
-        self.canvas.update()
     }
 }
